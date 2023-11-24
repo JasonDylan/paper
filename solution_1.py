@@ -311,23 +311,23 @@ def allocate_servers_2_cities_for_a_decision(allocate_tuple, initial_state_df, s
         new_min_combination.append([city_2_idx[server], server, city, task_level, server_level])
     
     # new_selected_elements = 
-    for allocate_group in selected_elements:
-        # print("allocate_group", allocate_group)
-        new_allocate_group = []
-        # for task_city, server_city in zip(allocate_group, selected_server_list):
-        for allocate in allocate_group:
-            # print(allocate, city_2_idx)
-            server_city, task_city  = allocate
-            # （业务员编号id，业务员城市，分配去的城市编号，业务员等级，城市等级）
-            new_allocate = [city_2_idx[server_city], server_city, task_city, task_level, server_level]
+    # for allocate_group in selected_elements:
+    #     # print("allocate_group", allocate_group)
+    #     new_allocate_group = []
+    #     # for task_city, server_city in zip(allocate_group, selected_server_list):
+    #     for allocate in allocate_group:
+    #         # print(allocate, city_2_idx)
+    #         server_city, task_city  = allocate
+    #         # （业务员编号id，业务员城市，分配去的城市编号，业务员等级，城市等级）
+    #         new_allocate = [city_2_idx[server_city], server_city, task_city, task_level, server_level]
             
-            # 下面如果保存内存占用太多了！所以应该直接决策的
-            new_allocate_group.append(new_allocate)
-        new_selected_elements.append(new_allocate_group)
+    #         # 下面如果保存内存占用太多了！所以应该直接决策的
+    #         new_allocate_group.append(new_allocate)
+    #     new_selected_elements.append(new_allocate_group)
     
-    memory_usage_of_new_selected_elements = sys.getsizeof(new_selected_elements)
+    # memory_usage_of_new_selected_elements = sys.getsizeof(new_selected_elements)
     
-    print(f" {memory_usage_of_new_selected_elements=}(Bytes) {new_selected_elements=} ")
+    # print(f" {memory_usage_of_new_selected_elements=}(Bytes) {new_selected_elements=} ")
     return new_selected_elements, final_revenue, new_min_combination
 
 
@@ -341,7 +341,7 @@ def allocate_servers_2_cities(decisions: list[tuple], initial_state_df, servers_
     max_combination = ()
     for decision in decisions:
         city_servers_for_a_decision_list, final_revenue, min_combination = allocate_servers_2_cities_for_a_decision(decision, initial_state_df, servers_remain_df)
-        decision_allocations.append(city_servers_for_a_decision_list)
+        # decision_allocations.append(city_servers_for_a_decision_list)
         decision_allocations_revenue_combination.append((final_revenue, min_combination))
         if final_revenue > max_revenue:
             max_revenue = final_revenue
@@ -351,10 +351,9 @@ def allocate_servers_2_cities(decisions: list[tuple], initial_state_df, servers_
     return decision_allocations, decision_allocations_revenue_combination, max_revenue, max_combination
 
 
-def write_list_to_file(lst, filename):
+def write_list_to_file(a_dict, filename):
     with open(filename, 'w') as file:
-        for item in lst:
-            file.write(str(item) + '\n')
+        file.write(str(a_dict) + '\n')
     print(f"{filename=} saved!")
 
 # 根据最优解的combination 求得业务员之后的位置
@@ -512,7 +511,7 @@ for weekday in range(1, 8):
             #   ((城市，server),(城市，server),...),
             #   ((城市，server),(城市，server),...),
             # ]]
-            all_allocations_for_decisions.append(all_allocations)
+            # all_allocations_for_decisions.append(all_allocations)
             # decision_allocations_revenue_combination_for_decisions.append(decision_allocations_revenue_combination)
             len_all_allocations = len(all_allocations)
             print(f"{len_all_allocations=} {all_allocations=} ")
@@ -520,10 +519,11 @@ for weekday in range(1, 8):
         revenue_sum += max_revenue
         allocation_for_a_day.extend(max_combination)
         
+        save_values = {"revenue_sum":revenue_sum, "allocation_for_a_day":allocation_for_a_day}
         #decision_allocations_revenue_combination_for_decisionss.append(decision_allocations_revenue_combination_for_decisions)
 
         
-        write_list_to_file(all_allocations_for_decisions, f"all_allocations_for_decisions_{join_idx}_weekday_{weekday}.txt")
+        write_list_to_file(save_values, f"all_allocations_for_decisions_{join_idx}_weekday_{weekday}.txt")
         # join_idx_2_decisions_allocations.append(all_allocations_for_decisions)
         #     for a_allocations in all_allocations:
         #         # a_allocations = [((城市，server),(城市，server),...),
