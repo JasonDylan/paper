@@ -195,10 +195,10 @@ def generate_joins(task_level_counts, server_level_counts):
 
 
 def get_combinations(server_list, cities, current_combination, min_sum=float('inf'), min_combination=None, need_comb_num=None):
-    global a_city
+    global a_city_df
     if len(server_list) == 0:
         # TODO 取消存储防止爆内存
-        current_sum = sum([a_city[server][city] for server,city in current_combination])
+        current_sum = sum([a_city_df[server][city] for server,city in current_combination])
         if current_sum < min_sum:
             min_sum = current_sum
             min_combination = current_combination
@@ -208,7 +208,7 @@ def get_combinations(server_list, cities, current_combination, min_sum=float('in
             new_min_sum = float('inf')
             new_min_combination = None
             for pair in pairs:
-                current_sum = sum([a_city[server][city] for server, city in pair])
+                current_sum = sum([a_city_df[server][city] for server, city in pair])
                 if current_sum < new_min_sum:
                     new_min_sum = current_sum
                     new_min_combination = pair
@@ -230,7 +230,7 @@ def get_combinations(server_list, cities, current_combination, min_sum=float('in
 # 输入为指定task_level的城市位置，有指定server_level对应的server位置, 和分配数量，
 # 然后得到城市的位置range和server的位置range， 随机匹配allocate_num的个数量，约束是如果以及分配完的目的地不应该再次分配
 def allocate_servers_2_cities_for_a_decision(allocate_tuple, initial_state_df, servers_remain_df):
-    global revenue_for_level, a_city
+    global revenue_for_level, a_city_df
     
     task_level, server_level, allocate_num = allocate_tuple
     revenue = revenue_for_level[task_level-1] * allocate_num
@@ -389,14 +389,15 @@ def generate_idx_2_joins(state_df, servers_remain_df):
 
 
 # %%
-global revenue_for_level, a_city
+global revenue_for_level, a_city_df
 # 收益率
 revenue_for_level = [3500, 3000, 2500, 2000, 1500]
 np.random.seed(42)
+city_num = 13
 # 生成 26个城市
-city, city_to_province = generate_city()
-city_names = city.columns
-a_city, city_num_2_name = change_df_city_name_2_idx(cities=city)
+city_df, city_to_province = generate_city(city_nums=city_num)
+city_names = city_df.columns
+a_city_df, city_num_2_name = change_df_city_name_2_idx(cities=city_df)
 
 global arriving_rate_df
 arriving_rate_df = pd.read_excel('./data/数据.xlsx', sheet_name='arriving rate', index_col=0)
@@ -410,9 +411,9 @@ servers_df.columns = ['current_city', 'level', 'day off']
 # 当前日子，对于每个城市的状态，业务员的状态，生成一组对业务员的分配，
 # 可能为（业务员编号id，业务员城市，分配去的城市编号，业务员等级，城市等级）
 
-
-a_state_df = initial_state_df.copy()
-a_servers_df = servers_df.copy()
+arriving_rate_df = arriving_rate_df[:city_num]
+a_state_df = initial_state_df.copy()[:city_num]
+a_servers_df = servers_df.copy()[servers_df['current_city']<= city_num]
 T = 7
 for weekday in range(1, T+1):
     
@@ -448,10 +449,10 @@ for weekday in range(1, T+1):
             #   ((城市，server),(城市，server),...),
             #   ((城市，server),(城市，server),...),
             # ]]
-            all_allocations_for_decisions.append({idx:revenue_and_combination_for_decisions})
+            all_best_allocations_for_decisions.append({idx:revenue_and_combination_for_decisions})
         
         # 开始合并决策，并reduce 并获取V历史记录的对应的收益。
-        
+    print("test")
 
         
         # write_list_to_file(save_values, f"all_allocations_for_decisions_{join_idx}_weekday_{weekday}.txt")
