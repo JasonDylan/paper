@@ -473,7 +473,7 @@ for weekday in range(1, T+1):
     tasks = generate_tasks(arriving_rate_matrix)
     # 更新状态矩阵
     new_state_df = update_state(current_state_df, tasks)
-    new_servers_df = update_server_cities(servers_df, allocation_for_a_day)
+    new_servers_df = update_server_cities(a_servers_df, allocation_for_a_day)
 
     a_state_df = new_state_df
     a_servers_df = new_servers_df
