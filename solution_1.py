@@ -196,7 +196,7 @@ def generate_joins(task_level_counts, server_level_counts):
 
 def get_combinations(server_list, cities, current_combination, min_sum=float('inf'), min_combination=None, need_comb_num=None):
     global a_city_df
-    if len(server_list) == 0:
+    if len(server_list) == 0 or len(cities)==0:
         # TODO 取消存储防止爆内存
         current_sum = sum([a_city_df[server][city] for server,city in current_combination])
         if current_sum < min_sum:
@@ -233,6 +233,7 @@ def allocate_servers_2_cities_for_a_decision(allocate_tuple, initial_state_df, s
     global revenue_for_level, a_city_df
     
     task_level, server_level, allocate_num = allocate_tuple
+    # if allocate_num > 1:
     revenue = revenue_for_level[task_level-1] * allocate_num
     cost = 0
     
@@ -263,8 +264,10 @@ def allocate_servers_2_cities_for_a_decision(allocate_tuple, initial_state_df, s
 
     # 获取 满足task_level要求的城市 和 满足 server_level 的server 条件下的所有分配，
     min_sum, min_combination = get_combinations(selected_server_city_id_list, repeated_city, [])
-    
-
+        
+    # else:
+    #     min_combination = [(task_level, server_level)]
+    #     min_sum  = 
     print("min Combination:", min_combination) # cost最小的组合
     print("min Sum:", min_sum)
     final_revenue = revenue - min_sum 
@@ -274,6 +277,10 @@ def allocate_servers_2_cities_for_a_decision(allocate_tuple, initial_state_df, s
 
     # 存到内存
     new_min_combination = []
+    if min_combination:
+        print(min_combination)
+    else:
+        print(None)
     for server, city in min_combination:
         new_min_combination.append([server_city_id_2_server_id[server], server, city, task_level, server_level])
     return final_revenue, new_min_combination
@@ -399,6 +406,8 @@ city_df, city_to_province = generate_city(city_nums=city_num)
 city_names = city_df.columns
 a_city_df, city_num_2_name = change_df_city_name_2_idx(cities=city_df)
 
+V_reduce = {} # 输入一个缩减为三个省的state 和 一个action 对应结果为 对应的收益
+
 global arriving_rate_df
 arriving_rate_df = pd.read_excel('./data/数据.xlsx', sheet_name='arriving rate', index_col=0)
 travel_fee_df = pd.read_excel('./data/数据.xlsx', sheet_name='travel fee', index_col=0)
@@ -414,11 +423,15 @@ servers_df.columns = ['current_city', 'level', 'day off']
 arriving_rate_df = arriving_rate_df[:city_num]
 a_state_df = initial_state_df.copy()[:city_num]
 a_servers_df = servers_df.copy()[servers_df['current_city']<= city_num]
+saved_params = {}
 T = 7
+
+def cul_a_cycle():
+    return 
 for weekday in range(1, T+1):
     
     # ------根据 level 来做分组，进行组内分配
-
+    print(f"-----------------------------------------------weekday:{weekday}------------------------------------------")
     # 先排除当天放假的员工
     servers_remain_df = a_servers_df[a_servers_df['day off'] != weekday]
     print(f"{servers_remain_df=}")
@@ -454,9 +467,6 @@ for weekday in range(1, T+1):
         # 开始合并决策，并reduce 并获取V历史记录的对应的收益。
     print("test")
 
-        
-        # write_list_to_file(save_values, f"all_allocations_for_decisions_{join_idx}_weekday_{weekday}.txt")
-
     new_state_df = a_state_df.copy()
     for allocation in allocation_for_a_day:
         server_id, server_city, allocate_city, server_level, city_level = allocation[0], allocation[1], allocation[2], allocation[3], allocation[4]
@@ -465,14 +475,12 @@ for weekday in range(1, T+1):
         else:
             new_state_df[f"level {city_level}"][f"city {allocate_city}"] -= 1
 
-    # arriving_rate_array = arriving_rate_df.values
     arriving_rate_matrix = arriving_rate_df.values # 将到达率转换为NumPy数组
     current_state_df = a_state_df# 根据你的实际情况创建当前状态的DataFrame
-    # print(type(arriving_rate_matrix[0]), arriving_rate_matrix[0][0])
     # 生成新任务
-    tasks = generate_tasks(arriving_rate_matrix)
+    new_tasks = generate_tasks(arriving_rate_matrix)
     # 更新状态矩阵
-    new_state_df = update_state(current_state_df, tasks)
+    new_state_df = update_state(current_state_df, new_tasks)
     new_servers_df = update_server_cities(a_servers_df, allocation_for_a_day)
 
     a_state_df = new_state_df
