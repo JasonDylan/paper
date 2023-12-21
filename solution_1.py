@@ -193,12 +193,16 @@ def generate_joins(task_level_counts, server_level_counts):
     
     return joins
 
+def reduce_allocation_and_city_2_province(allocation, state_df):
+    reduced_allocation = reduced_state_df = None
 
+    return reduced_allocation, reduced_state_df
+    
 def get_combinations(server_list, cities, current_combination, min_sum=float('inf'), min_combination=None, need_comb_num=None):
-    global a_city_df
+    global a_city_distance_df
     if len(server_list) == 0 or len(cities)==0:
         # TODO 取消存储防止爆内存
-        current_sum = sum([a_city_df[server][city] for server,city in current_combination])
+        current_sum = sum([a_city_distance_df[server][city] for server,city in current_combination])
         if current_sum < min_sum:
             min_sum = current_sum
             min_combination = current_combination
@@ -208,7 +212,7 @@ def get_combinations(server_list, cities, current_combination, min_sum=float('in
             new_min_sum = float('inf')
             new_min_combination = None
             for pair in pairs:
-                current_sum = sum([a_city_df[server][city] for server, city in pair])
+                current_sum = sum([a_city_distance_df[server][city] for server, city in pair])
                 if current_sum < new_min_sum:
                     new_min_sum = current_sum
                     new_min_combination = pair
@@ -230,7 +234,7 @@ def get_combinations(server_list, cities, current_combination, min_sum=float('in
 # 输入为指定task_level的城市位置，有指定server_level对应的server位置, 和分配数量，
 # 然后得到城市的位置range和server的位置range， 随机匹配allocate_num的个数量，约束是如果以及分配完的目的地不应该再次分配
 def allocate_servers_2_cities_for_a_decision(allocate_tuple, initial_state_df, servers_remain_df):
-    global revenue_for_level, a_city_df
+    global revenue_for_level, a_city_distance_df
     
     task_level, server_level, allocate_num = allocate_tuple
     # if allocate_num > 1:
@@ -280,13 +284,13 @@ def allocate_servers_2_cities_for_a_decision(allocate_tuple, initial_state_df, s
     if min_combination:
         print(min_combination)
     else:
-        print(None)
+        print(f"{min_combination=}")
     for server, city in min_combination:
         new_min_combination.append([server_city_id_2_server_id[server], server, city, task_level, server_level])
     return final_revenue, new_min_combination
 
 
-def allocate_servers_2_cities(decisions: list[tuple], initial_state_df, servers_remain_df):
+def allocate_servers_2_cities(decisions: list[tuple], initial_state_df, servers_remain_df)->list[dict]:
      # 根据decisions集合分组情况/城市状态df/用户状态df，分配所有情况
      
     revenue_and_combination_for_decisions = []
@@ -396,15 +400,15 @@ def generate_idx_2_joins(state_df, servers_remain_df):
 
 
 # %%
-global revenue_for_level, a_city_df
+global revenue_for_level, a_city_distance_df
 # 收益率
 revenue_for_level = [3500, 3000, 2500, 2000, 1500]
 np.random.seed(42)
-city_num = 13
+city_num = 5
 # 生成 26个城市
-city_df, city_to_province = generate_city(city_nums=city_num)
-city_names = city_df.columns
-a_city_df, city_num_2_name = change_df_city_name_2_idx(cities=city_df)
+city_distance_df, city_to_province = generate_city(city_nums=city_num)
+city_names = city_distance_df.columns
+a_city_distance_df, city_num_2_name = change_df_city_name_2_idx(cities=city_distance_df)
 
 V_reduce = {} # 输入一个缩减为三个省的state 和 一个action 对应结果为 对应的收益
 
@@ -425,65 +429,67 @@ a_state_df = initial_state_df.copy()[:city_num]
 a_servers_df = servers_df.copy()[servers_df['current_city']<= city_num]
 saved_params = {}
 T = 7
+# 这个循环，进行一次指定周期内的迭代。
 
-def cul_a_cycle():
-    return 
-for weekday in range(1, T+1):
+def cul_a_cycle(T, a_servers_df, a_state_df):
+    # 每次迭代，应该决策前的状态，最优决策，缩减的决策和状态，以及收益， 之后应当可以通过缩减的决策和状态获取收益，这个得做一个保存
+    # 我们先假设组内直接求最优，组间组合的时候做一个缩减后的状态收益决策。
+    for weekday in range(1, T+1):
     
-    # ------根据 level 来做分组，进行组内分配
-    print(f"-----------------------------------------------weekday:{weekday}------------------------------------------")
-    # 先排除当天放假的员工
-    servers_remain_df = a_servers_df[a_servers_df['day off'] != weekday]
-    print(f"{servers_remain_df=}")
-    # 根据 level 来做分组
-    join_idx_2_decisions = generate_idx_2_joins(a_state_df, servers_remain_df)
-    print(f"{join_idx_2_decisions=}")
-    cnt = 0
-    # print("（业务员编号id，业务员城市，分配去的城市编号，业务员等级，城市等级）")
-    
-    join_idx_2_decisions_allocations = []
-    allocation_for_a_day = []
-    revenue_sum = 0
-    # 对于每一个集合，进行集合内分配
-    for join_idx, decisions_for_each_joins in join_idx_2_decisions.items():
-        cnt += 1
-        # 根据集合分组后的，集合内level的数量分配
-        print("----join_idx, decisions_for_each_join----", join_idx, decisions_for_each_joins)
-        # decisions_for_each_join = [[(1, 1, 4)]]
-        all_best_allocations_for_decisions = []
+        # ------根据 level 来做分组，进行组内分配
+        print(f"-----------------------------------------------weekday:{weekday}------------------------------------------")
+        # 先排除当天放假的员工
+        servers_remain_df = a_servers_df[a_servers_df['day off'] != weekday]
+        print(f"{servers_remain_df=}")
+        # 根据 level 来做分组
+        join_idx_2_decisions = generate_idx_2_joins(a_state_df, servers_remain_df)
+        print(f"{join_idx_2_decisions=}")
+        cnt = 0
+        # print("（业务员编号id，业务员城市，分配去的城市编号，业务员等级，城市等级）")
         
-        for idx, decisions in enumerate(decisions_for_each_joins):
-            # 集合分组后，level的分配方式可能很多, 一个decision里面是一个分配方案[(1, 1, 4)]
-            # 可能是这样的 [(1, 1, 4)] / [(1, 1, 2), (2, 2, 2)]
-            # 根据数量分配，进行实际的城市分配方案 list下的一个list是
+        join_idx_2_decisions_allocations = []
+        allocation_for_a_day = []
+        revenue_sum = 0
+        # 对于每一个集合，进行集合内分配
+        for join_idx, decisions_for_each_joins in join_idx_2_decisions.items():
+            cnt += 1
+            # 根据集合分组后的，集合内level的数量分配
+            print("----join_idx, decisions_for_each_join----", join_idx, decisions_for_each_joins)
+            # decisions_for_each_join = [[(1, 1, 4)]]
+            all_best_allocations_for_decisions = []
+            
+            for idx, decisions in enumerate(decisions_for_each_joins):
+                # 集合分组后，level的分配方式可能很多, 一个decision里面是一个分配方案[(1, 1, 4)]
+                # 可能是这样的 [(1, 1, 4)] / [(1, 1, 2), (2, 2, 2)]
+                # 根据数量分配，进行实际的城市分配方案 list下的一个list是
 
-            revenue_and_combination_for_decisions = allocate_servers_2_cities(decisions, a_state_df, servers_remain_df)
-            # all_allocations = [[
-            #   ((城市，server),(城市，server),...),
-            #   ((城市，server),(城市，server),...),
-            # ]]
-            all_best_allocations_for_decisions.append({idx:revenue_and_combination_for_decisions})
-        
-        # 开始合并决策，并reduce 并获取V历史记录的对应的收益。
-    print("test")
+                revenue_and_combination_for_decisions = allocate_servers_2_cities(decisions, a_state_df, servers_remain_df)
+                # revenue_and_combination_for_decisions = {'revenue':final_revenue, 'combination':min_combination}
+                all_best_allocations_for_decisions.append({idx:revenue_and_combination_for_decisions})
 
-    new_state_df = a_state_df.copy()
-    for allocation in allocation_for_a_day:
-        server_id, server_city, allocate_city, server_level, city_level = allocation[0], allocation[1], allocation[2], allocation[3], allocation[4]
-        if new_state_df[f"level {city_level}"][f"city {allocate_city}"] -1 < 0:
-            print(f'ERROR {new_state_df[f"level {city_level}"][f"city {allocate_city}"]}')
-        else:
-            new_state_df[f"level {city_level}"][f"city {allocate_city}"] -= 1
+            # 开始合并决策，并reduce 并获取V历史记录的对应的收益。
+                
 
-    arriving_rate_matrix = arriving_rate_df.values # 将到达率转换为NumPy数组
-    current_state_df = a_state_df# 根据你的实际情况创建当前状态的DataFrame
-    # 生成新任务
-    new_tasks = generate_tasks(arriving_rate_matrix)
-    # 更新状态矩阵
-    new_state_df = update_state(current_state_df, new_tasks)
-    new_servers_df = update_server_cities(a_servers_df, allocation_for_a_day)
+        print("test")
 
-    a_state_df = new_state_df
-    a_servers_df = new_servers_df
+        new_state_df = a_state_df.copy()
+        for allocation in allocation_for_a_day:
+            server_id, server_city, allocate_city, server_level, city_level = allocation[0], allocation[1], allocation[2], allocation[3], allocation[4]
+            if new_state_df[f"level {city_level}"][f"city {allocate_city}"] -1 < 0:
+                print(f'ERROR {new_state_df[f"level {city_level}"][f"city {allocate_city}"]}')
+            else:
+                new_state_df[f"level {city_level}"][f"city {allocate_city}"] -= 1
+
+        arriving_rate_matrix = arriving_rate_df.values # 将到达率转换为NumPy数组
+        current_state_df = a_state_df# 根据你的实际情况创建当前状态的DataFrame
+        # 生成新任务
+        new_tasks = generate_tasks(arriving_rate_matrix)
+        # 更新状态矩阵
+        new_state_df = update_state(current_state_df, new_tasks)
+        new_servers_df = update_server_cities(a_servers_df, allocation_for_a_day)
+
+        a_state_df = new_state_df
+        a_servers_df = new_servers_df
+
 
 
