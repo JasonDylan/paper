@@ -397,7 +397,27 @@ def generate_idx_2_joins(state_df, servers_remain_df):
 
     return join_idx_2_decisions
 
+def get_all_allocations_for_decisions(allocations_for_decisions:dict, )->(int, list):
+    num_combinations = 1
+    for key, value in allocations_for_decisions.items():
+        num_combinations *= len(value)
 
+    # Print the number of possible combinations
+    print(num_combinations)
+
+    # Get all possible combinations of values from the dictionary
+    revenue_and_combinations = list(itertools.product(*allocations_for_decisions.values()))
+    # 
+    for item in revenue_and_combinations:
+        a_item = list(item)
+        revene_sum = 0
+        combinations = []
+        for a_dict in a_item:
+            revene_sum += a_dict["revenue"]
+            combinations.extend(a_dict["combination"])
+
+        
+    return num_combinations, revenue_and_combinations
 
 # %%
 global revenue_for_level, a_city_distance_df
@@ -468,7 +488,7 @@ def cul_a_cycle(T, a_servers_df, a_state_df):
                 all_best_allocations_for_decisions.append({idx:revenue_and_combination_for_decisions})
 
             # 开始合并决策，并reduce 并获取V历史记录的对应的收益。
-                
+            num_combinations, revenue_and_combinations = get_all_allocations_for_decisions(all_best_allocations_for_decisions, )
 
         print("test")
 
