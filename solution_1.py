@@ -27,7 +27,9 @@ def generate_city(city_nums:int=26)->(pd.DataFrame, dict):
     distance_matrix.columns = df.iloc[:, city_index].values
 
     # 挑选出安徽、江苏、浙江和上海的省份及对应的矩阵数据
+
     selected_provinces = ['Anhui', 'Jiangsu', 'Zhejiang', 'Shanghai']
+    proveng_2_num = []
     selected_indices = [i for i, prov in enumerate(provinces) if prov in selected_provinces]
     selected_indices_str = df.values[selected_indices, city_index]
     print(f"{selected_indices_str=}")
@@ -53,7 +55,8 @@ def generate_city(city_nums:int=26)->(pd.DataFrame, dict):
         proveng = city_to_province[city]
         city_columns.append((proveng, city))
     print(f"{city_columns=}")
-    city = pd.DataFrame(selected_data.values, index=pd.MultiIndex.from_tuples(city_columns), columns=pd.MultiIndex.from_tuples(city_columns))
+    column_names = ['proveng', 'cityeng']
+    city = pd.DataFrame(selected_data.values, index=pd.MultiIndex.from_tuples(city_columns, names=column_names), columns=pd.MultiIndex.from_tuples(city_columns, names=column_names))
 
     return city, city_to_province
 
@@ -62,7 +65,7 @@ def find_not_zero_level_index(arr):
         return -1
     
     len_arr = len(arr)
-    for i in range(len_arr - 1, -1,-1):
+    for i in range(len_arr - 1, -1, -1):
         if arr[i] != 0:
             return i
 
@@ -397,7 +400,30 @@ def generate_idx_2_joins(state_df, servers_remain_df):
 
     return join_idx_2_decisions
 
-def get_all_allocations_for_decisions(allocations_for_decisions:dict, )->(int, list):
+def reduce_server_df(a_state_df):
+    # 默认是有两列index，一列省份一列市的，缩减为省份的
+    new_index = [province_dict[city_num_2_name[int(city[5:])][0]] for city in a_state_df.index]
+
+    # 将新的索引列表赋值给a_state_df的索引
+    reduced_state_df = a_state_df.copy()
+    reduced_state_df.index = new_index
+
+    print("New a_state_df:")
+    print(reduced_state_df)
+
+    return reduced_state_df
+
+def reduce_state_df():
+    # 默认是有两列index，一列省份一列市的，缩减为省份的
+    a_servers_df_new = a_servers_df.copy()
+    a_servers_df_new['current_prov'] = a_servers_df_new['current_city'].map(city_num_2_name).map(lambda x: province_dict[x[0]])
+
+    print("New a_servers_df:")
+    print(a_servers_df_new)
+    pass
+
+
+def get_all_allocations_for_decisions(allocations_for_decisions:dict, a_servers_df:pd.DataFrame, a_state_df:pd.DataFrame)->(int, list):
     num_combinations = 1
     for key, value in allocations_for_decisions.items():
         num_combinations *= len(value)
@@ -416,17 +442,19 @@ def get_all_allocations_for_decisions(allocations_for_decisions:dict, )->(int, l
             revene_sum += a_dict["revenue"]
             combinations.extend(a_dict["combination"])
 
-        
+    
     return num_combinations, revenue_and_combinations
 
 # %%
-global revenue_for_level, a_city_distance_df
+global revenue_for_level, a_city_distance_df, province_dict, city_num_2_name
 # 收益率
 revenue_for_level = [3500, 3000, 2500, 2000, 1500]
 np.random.seed(42)
 city_num = 5
 # 生成 26个城市
 city_distance_df, city_to_province = generate_city(city_nums=city_num)
+province = city_distance_df.index.get_level_values('proveng').unique()
+province_dict = {province[i]: i+1 for i in range(len(province))}
 city_names = city_distance_df.columns
 a_city_distance_df, city_num_2_name = change_df_city_name_2_idx(cities=city_distance_df)
 
@@ -477,7 +505,7 @@ def cul_a_cycle(T, a_servers_df, a_state_df):
             print("----join_idx, decisions_for_each_join----", join_idx, decisions_for_each_joins)
             # decisions_for_each_join = [[(1, 1, 4)]]
             all_best_allocations_for_decisions = []
-            
+
             for idx, decisions in enumerate(decisions_for_each_joins):
                 # 集合分组后，level的分配方式可能很多, 一个decision里面是一个分配方案[(1, 1, 4)]
                 # 可能是这样的 [(1, 1, 4)] / [(1, 1, 2), (2, 2, 2)]
@@ -488,7 +516,7 @@ def cul_a_cycle(T, a_servers_df, a_state_df):
                 all_best_allocations_for_decisions.append({idx:revenue_and_combination_for_decisions})
 
             # 开始合并决策，并reduce 并获取V历史记录的对应的收益。
-            num_combinations, revenue_and_combinations = get_all_allocations_for_decisions(all_best_allocations_for_decisions, )
+            num_combinations, revenue_and_combinations = get_all_allocations_for_decisions(all_best_allocations_for_decisions, a_servers_df, a_state_df)
 
         print("test")
 
@@ -512,4 +540,4 @@ def cul_a_cycle(T, a_servers_df, a_state_df):
         a_servers_df = new_servers_df
 
 
-
+cul_a_cycle(T, a_servers_df, a_state_df)
