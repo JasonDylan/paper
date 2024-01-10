@@ -86,7 +86,7 @@ def allocate(tasks:list, servers:list, levels:list, decision:list[tuple]= []):
         decisions.append(decision)
         print(f"生成一个 decisions {decisions}")
         return decisions
-    if last_task_lv_idx < last_server_lv_idx:
+    if last_task_lv_idx < last_server_lv_idx: # 剩的server level 比 task level多，则舍弃多的server
         last_server_lv_idx = last_task_lv_idx
     if last_task_lv_idx == last_server_lv_idx:
         # 分配最后一个非0 server给小于等于其level的task
@@ -107,7 +107,7 @@ def allocate(tasks:list, servers:list, levels:list, decision:list[tuple]= []):
         a_decisions = allocate(tasks, servers, levels, decision) # 分配剩余
         decisions = decisions + a_decisions
 
-    elif last_task_lv_idx > last_server_lv_idx:
+    elif last_task_lv_idx > last_server_lv_idx: # 剩的task level 比 server level多
         # 当最低等级servers剩余，将该servers分到小于等于该等级的task里
         allocate_ranges = [range(0, min(tasks[idx], servers[last_server_lv_idx])+1) for idx in range(last_server_lv_idx, last_task_lv_idx+1)]
         allocate_combinations = list(itertools.product(*allocate_ranges))
