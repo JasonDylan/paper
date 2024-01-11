@@ -31,11 +31,10 @@ def allocate(tasks:list, servers:list, levels:list)->list[list[tuple]]:
         allocate_num = servers[idx] # 理论当到最后一个元素的时候，前面已经分配完毕了
         allocations = [[(levels[idx], levels[idx], allocate_num)]]
     elif sum(servers) > sum(tasks):
-        decisions = []
+        all_allocations = []
         last_task_lv_idx = find_not_zero_lv_index(tasks) # 获取未分配完的最大level的task的下标
         last_server_lv_idx = find_not_zero_lv_index(servers) # 获取未分配完的最大level的server的下标
         # 分配一个等级的servers
-        # 分配方法
         # 1. 找到能分配的最小值和最大值：min n <- sum(tasks) <= sum(servers[:-1])+n and max 当前等级的task 总数
         min_allocate_num = get_min_allocate_num(tasks, servers, levels)
         max_allocate_num = tasks[-1]
@@ -49,15 +48,13 @@ def allocate(tasks:list, servers:list, levels:list)->list[list[tuple]]:
         # 3. 对所有分配组合进行分配, 更新servers/tasks, 默认当前servers 分配完毕,所以删除当前servers, 做进一步分配
             a_tasks[last_task_lv_idx]-=allocate_num
             a_servers[last_server_lv_idx]-=a_servers[last_server_lv_idx]
-            allocations = allocate(a_tasks, a_servers, levels)
-            new_allocations = comb_allocations(a_decision, allocations)
-            a_allocations = []
+            a_allocations = allocate(a_tasks, a_servers, levels)
         # 4. 对于所有的分配情况, 其生成的decision和allocate结果聚合
-        
+            new_allocations = comb_allocations(a_decision, a_allocations)
         # 5. 对上面的聚合结果进行聚合list[list[tuple]]+list[list[tuple]]
-        # allocations = allocate(tasks, servers, levels)
-        # new_allocations = comb_allocations(a_decision, allocations)
-        pass
+            all_allocations.append(new_allocations)
+
+        return all_allocations
     elif sum(servers) <= sum(tasks):
         last_task_lv_idx = find_not_zero_lv_index(tasks) # 获取未分配完的最大level的task的下标
         last_server_lv_idx = find_not_zero_lv_index(servers) # 获取未分配完的最大level的server的下标
