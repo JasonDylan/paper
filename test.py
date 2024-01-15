@@ -27,8 +27,8 @@ def comb_allocations(decision:list[tuple], allocations:list[list[tuple]])->list[
     return new_allocations
 
 
-def get_min_allocate_num(tasks:list, servers:list, levels:list) -> int:
-    return  max(0, sum(tasks) - sum(servers[:-1]))
+def get_min_allocate_num(tasks:list, servers:list, levels:list, last_task_lv_idx:int, last_server_lv_idx:int) -> int:
+    return  max(0, min(tasks[last_task_lv_idx], sum(tasks[:last_task_lv_idx+1]) - sum(servers[:last_server_lv_idx])))
 
 
 def allocate(tasks:list, servers:list, levels:list)->list[list[tuple]]:
@@ -44,7 +44,7 @@ def allocate(tasks:list, servers:list, levels:list)->list[list[tuple]]:
     elif sum(servers) > sum(tasks):
         # 分配一个等级的servers
         # 1. 找到能分配的最小值和最大值：min n <- sum(tasks) <= sum(servers[:-1])+n and max 当前等级的task 总数
-        min_allocate_num = get_min_allocate_num(tasks, servers, levels)
+        min_allocate_num = get_min_allocate_num(tasks, servers, levels, last_task_lv_idx, last_server_lv_idx)
         max_allocate_num = tasks[-1]
         # 2. 获取所有分配min-max
         for allocate_num in range(min_allocate_num, max_allocate_num+1):
@@ -56,8 +56,9 @@ def allocate(tasks:list, servers:list, levels:list)->list[list[tuple]]:
             a_tasks = tasks.copy()
             a_servers = servers.copy()
         # 3. 对所有分配组合进行分配, 更新servers/tasks, 默认当前servers 分配完毕,所以删除当前servers, 做进一步分配
-            a_tasks[last_task_lv_idx]-=allocate_num
-            a_servers[last_server_lv_idx]-=a_servers[last_server_lv_idx]
+            a_tasks[last_task_lv_idx] -= allocate_num
+
+            a_servers[last_server_lv_idx] -= a_servers[last_server_lv_idx]
             a_allocations = allocate(a_tasks, a_servers, levels)
         # 4. 对于所有的分配情况, 其生成的decision和allocate结果聚合
             new_allocations = comb_allocations(a_decision, a_allocations)
@@ -116,7 +117,9 @@ def allocate(tasks:list, servers:list, levels:list)->list[list[tuple]]:
 
     return all_allocations
 
-
-decisions = allocate([0, 0, 1, 3, 2], [2, 1, 1, 2, 1], [1, 2, 3, 4, 5])
+tasks = [3, 1, 0, 0, 0]
+servers = [5, 0, 0, 0, 0]
+decisions = allocate(tasks, servers, [1, 2, 3, 4, 5])
+print(decisions)
 print(decisions)
 
