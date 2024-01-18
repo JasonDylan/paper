@@ -1,7 +1,7 @@
 import itertools
 
 
-def find_not_zero_level_index(arr:list):
+def find_not_zero_lv_index(arr:list):
     # 从后往前找,找到最后一个非0则返回
     # 全是0 返回-1
     if sum(arr) == 0:
@@ -14,95 +14,131 @@ def find_not_zero_level_index(arr:list):
     # 如果没有找到满足条件的数，表示全非0 返回len-1
     return len_arr-1
 
-def allocate(tasks:list, servers:list, levels:list, decision:list[tuple]= []):
-    # 传入当前state:(task/server/分配情况) ， 返回对于对于当前state的分配情况
+def comb_allocations(decision:list[tuple], allocations:list[list[tuple]])->list[list[tuple]]:
+    print(f"{decision=} {allocations=}")
+    # 将decision 放入每个allcations
+    if allocations:
+        new_allocations = []
+        for a_list in  allocations:
+            a_list.extend(decision)
+            new_allocations.append(a_list)
+    else:
+        new_allocations = [decision]
+    return new_allocations
 
-    # 分配所有情况
-    decisions = []
-    last_task_lv_idx = find_not_zero_level_index(tasks) # 获取未分配完的最大level的task的下标
-    last_server_lv_idx = find_not_zero_level_index(servers) # 获取未分配完的最大level的server的下标
-    if last_task_lv_idx < last_server_lv_idx: # 当server level 多于 task 表示
-        last_server_lv_idx = last_task_lv_idx
-    if last_server_lv_idx==-1:
-        decisions.append(decision)
-        print(f"生成一个 {decisions=}")
-        return decisions
-    
-    if last_task_lv_idx == last_server_lv_idx:
-        # 分配最后一个非0 server给小于等于其level的task
-        lv_idx = last_task_lv_idx # last_server_lv_idx 一样
-        last_level = levels[lv_idx]
 
-        server_num = servers[lv_idx] # 为什么全部都分配了？
-        task_num = tasks[lv_idx]
+def get_min_allocate_num(tasks:list, servers:list, levels:list, last_task_lv_idx:int, last_server_lv_idx:int) -> int:
+    left_servers_more_than_tasks_num = sum(tasks[:last_task_lv_idx+1]) - sum(servers[:last_server_lv_idx])
+    return max(0, min(tasks[last_task_lv_idx], left_servers_more_than_tasks_num))
 
-        allocate_num = min(server_num, task_num)
-        # 任务等级，业务员等级，数量
-        decision.append((last_level, last_level, allocate_num))
-        
-        servers[lv_idx] = server_num - allocate_num
-        tasks[lv_idx] = task_num - allocate_num
 
-        a_decisions = allocate(tasks, servers, levels, decision) # 分配剩余
-        decisions = decisions + a_decisions
-    elif last_task_lv_idx > last_server_lv_idx:
-        # 当最低等级servers剩余，将该servers分到小于等于该等级的task里
-        allocate_ranges = [range(0, min(tasks[idx], servers[last_server_lv_idx])+1) for idx in range(last_server_lv_idx, last_task_lv_idx+1)]
-        allocate_combinations = list(itertools.product(*allocate_ranges))
-        to_allocated_level = levels[last_server_lv_idx]
-        to_allocated_server_num = servers[last_server_lv_idx]
-        # 筛选小于to_allocated_server_num条件的随机组合
-        allocate_combinations_avalible = []
-        idx_2_lv_idx = list(range(last_server_lv_idx, last_task_lv_idx+1))
-        # 把comb的idx 转为 level的idx的list， 输入idx，返回level的idx ，用这个idx去levels 里取可以取搭配level的值
-        filtered_combinations = [t for t in allocate_combinations if sum(t) == 2]
-        print(filtered_combinations)
-        for comb in filtered_combinations:
-            print(f"avaliable comb {comb}")
-            a_decision = decision.copy()
+def allocate(tasks:list, servers:list, levels:list)->list[list[tuple]]:
+    last_task_lv_idx = find_not_zero_lv_index(tasks) # 获取未分配完的最大level的task的下标
+    last_server_lv_idx = find_not_zero_lv_index(servers) # 获取未分配完的最大level的server的下标
+    print(f"allocate {tasks=} {servers=} {levels=} {last_task_lv_idx=} {last_server_lv_idx=}")
+    # 递归结束
+    all_allocations = []
+    if last_task_lv_idx==-1 or -1==last_server_lv_idx:
+        print("case 1")
+        idx = 0
+        allocate_num = servers[idx] # 理论当到最后一个元素的时候，前面已经分配完毕了
+        all_allocations = []
+
+    elif sum(servers) > sum(tasks):
+        print("case 2")
+        # 分配一个等级的servers
+        # 1. 找到能分配的最小值和最大值：min n <- sum(tasks) <= sum(servers[:-1])+n and max 当前等级的task 总数
+        min_allocate_num = get_min_allocate_num(tasks, servers, levels, last_task_lv_idx, last_server_lv_idx)
+        max_allocate_num = tasks[last_task_lv_idx]
+        print(min_allocate_num, max_allocate_num)
+        # 2. 获取所有分配min-max
+        for allocate_num in range(min_allocate_num, max_allocate_num+1):
+            # if allocate_num:
+            a_decision = []
+            # 任务等级，业务员等级，数量
+            if allocate_num>0:
+                a_decision.append((levels[last_task_lv_idx], levels[last_server_lv_idx], allocate_num))
+            a_tasks = tasks.copy()
+            a_servers = servers.copy()
+        # 3. 对所有分配组合进行分配, 更新servers/tasks, 默认当前servers 分配完毕,所以删除当前servers, 做进一步分配
+            a_tasks[last_task_lv_idx] -= allocate_num
+            can_cut_servers = False
+            if last_server_lv_idx == last_task_lv_idx:
+                if a_tasks[last_task_lv_idx]==0:
+                    pass 
+
+            if can_cut_servers:
+                a_servers[last_server_lv_idx] -= a_servers[last_server_lv_idx]
+            else:
+                a_servers[last_server_lv_idx] -= allocate_num
+            a_allocations = allocate(a_tasks, a_servers, levels)
+        # 4. 对于所有的分配情况, 其生成的decision和allocate结果聚合
+            new_allocations = comb_allocations(a_decision, a_allocations)
+        # 5. 对上面的聚合结果进行聚合list[list[tuple]]+list[list[tuple]]
+            all_allocations.extend(new_allocations)
+    elif sum(servers) <= sum(tasks):
+        print("case 3")
+        # 1. 当lvidx不同的时候,也就是意味着last_task_lv_idx > last_server_lv_idx当前level的server能分配的task很多, 
+        #    生成分配所有servers[last_idx]到tasks[-1]~tasks[-last_task_lv_idx]的,参考之前写的方法。
+        if last_task_lv_idx > last_server_lv_idx:
+            # 生成所有可分配组合
+            allocate_lv_idx_range_list = list(range(last_server_lv_idx, last_task_lv_idx+1))
+            allocate_ranges = [range(0, min(tasks[idx], servers[last_server_lv_idx])+1) for idx in allocate_lv_idx_range_list]
+            allocate_combinations = list(itertools.product(*allocate_ranges))
+            # 分配的server的lv
+            to_allocated_lv = levels[last_server_lv_idx]
+            to_allocated_server_num = servers[last_server_lv_idx]
+            # 把comb的idx 转为 level的idx的list， 输入idx，返回level的idx ，用这个idx去levels 里取可以取搭配level的值
+            print("start for loop")
+            for comb in allocate_combinations:
+                if sum(comb) == to_allocated_server_num:
+                    print(f"avaliable comb {comb}")
+                    a_decision = []
+                    a_servers = servers.copy()
+                    a_tasks = tasks.copy()
+                    # 将生成的分配组合进行分配
+                    for a_lv_idx, servered_num in zip(allocate_lv_idx_range_list, comb):
+                        if servered_num:
+                            a_lv = levels[a_lv_idx]
+                            # 任务等级，业务员等级，数量
+                            a_decision.append((a_lv, to_allocated_lv, servered_num))
+                            # 对a_servers/a_tasks 进行分配更新
+                            a_servers[last_server_lv_idx] -= servered_num
+                            a_tasks[a_lv_idx] -= servered_num       
+                    a_allocations = allocate(a_tasks, a_servers, levels)
+                # 4. 对于所有的分配情况, 其生成的decision和allocate结果聚合
+                    new_allocations = comb_allocations(a_decision, a_allocations)
+                    all_allocations.extend(new_allocations)
+
+        elif last_server_lv_idx == last_server_lv_idx:
+        # 2. 相同时, 表示当前level的server能分配的task只有一个, 则完全分配最后一个
             a_servers = servers.copy()
             a_tasks = tasks.copy()
-            for a_lv_idx, a_comb_item in zip(idx_2_lv_idx, comb):
-                if a_comb_item:
-                    a_level = levels[a_lv_idx]
-                    servered_num = a_comb_item
-                    # 任务等级，业务员等级，数量
-                    a_decision.append((a_level, to_allocated_level, servered_num))
-                    task_num = tasks[a_lv_idx]
-                    remain_task_num = task_num - servered_num
-                    remain_server_num = a_servers[last_server_lv_idx] - servered_num
-                    a_servers[last_server_lv_idx] = remain_server_num
-                    a_tasks[a_lv_idx] = remain_task_num
-            new_decision = allocate(a_tasks, a_servers, levels, a_decision)
-            decisions += new_decision
-                
-        # 对每个comb都做递归的添加，先求得分配之后的情况，对每种情况做分配
-    elif last_task_lv_idx < last_server_lv_idx:
-        
-        print(f"error in {tasks=} {servers=} {levels=}")
+            allocate_num = a_servers[last_server_lv_idx]
+            allocate_lv = levels[last_server_lv_idx]
+            a_decision = []
+            a_decision.append((allocate_lv, allocate_lv, allocate_num))
+            a_servers[last_server_lv_idx] -= allocate_num
+            a_tasks[last_task_lv_idx] -= allocate_num
+            a_allocations = allocate(a_tasks, a_servers, levels)
+            all_allocations = comb_allocations(a_decision, a_allocations)
+        else:
+            raise Exception(f"Error {last_server_lv_idx} {last_task_lv_idx} ")
+        # 1.2的都作为decision
+        # 3. 更新tasks, servers(不需要删除 task )后, 调用allocations = allocate(tasks, servers, levels)
+        # 4. new_allocations = comb_allocations(a_decision, allocations)
 
-    return decisions
+    return all_allocations
 
-decisions = allocate([0, 0, 1, 3, 2], [2, 1, 1, 2, 1], [1, 2, 3, 4, 5])
+
+def allocate_from_top(tasks:list, servers:list, levels:list)->list[list[tuple]]:
+       
+    pass
+
+
+tasks = [2, 2, 0, 0, 0]
+servers = [2, 6, 0, 0, 0]
+decisions = allocate(tasks, servers, [1, 2, 3, 4, 5])
+print(decisions)
 print(decisions)
 
-
-# def allocate2(task_list: list[int], service_list: list[int], task_out: int, task_more: int, level_now: int, level_max: int)->list[list[tuple]]:
-#     if level_now==level_max:
-#         return 
-#     result = []
-#     task_out+=task_list[level_now]
-
-    
-#     for task_more_now in range(1+max(task_more, task_out-service_list[level_now])):
-#         for
-#             # 当前任务分配
-            
-#             # 上一级任务分配
-#             result_tmp = allocate2(task_list, service_list, task_out, task_more_now, level_now-1, level_max)
-
-#             # 任务分配组合
-
-
-
-# def disatch_task()
