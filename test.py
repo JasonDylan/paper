@@ -132,13 +132,99 @@ def allocate(tasks:list, servers:list, levels:list)->list[list[tuple]]:
 
 
 def allocate_from_top(tasks:list, servers:list, levels:list)->list[list[tuple]]:
-       
+    allocations = []
+    a_allocation = []
+    # 当前函数，默认每个task_num < server_num 
+    # 从前往后遍历，获得task_num 和server_num
+    # 第一个task_num 会被当前server_num 全部分配完成
+    # 第二个task_num 需要分配时要，便利server_num是否分配给 task_num 的情况
+    # 一个不分配，则第二个server_num 完全分配task_num, 剩余server_num 继续往下分配，而此时也有可能上上个level还有剩余，可以分配到这里
+    # 这里应该是用之前用过的，随机分配方式，获得所有的组合，对于剩下的level[0:]
+    # level 1 server 固定的 level 1 2 3 4
+    #                            * (    ) = sum
+    # 这里可以用矩阵来表示，当遍历到level n的时候，leveln的task 会被servers 必然分配完成，同时servers会有剩余
+    # 而这部分剩余。排列组合分配到剩下的level n+1-m(m表示最后一个level)，也就构成了一个矩阵level_num * 排列组合数量
+    # tasks - 这个矩阵，就能得到 剩余的task矩阵，在这个矩阵基础上，分配leveln+1
+    # 到level n+1 的时候 leveln+1 
+    last_level_left = servers[0]
+    for task_num in tasks:
+        allocate_num = task_num
+        
     pass
+def all_comb(a_tasks:list, a_servers:list, idx:int, allocate_num:int):
+    a_servers_list = []
+    a_tasks_list = []
+    a_combs_list = []
+
+    state_len = len(a_tasks)
+    # 获取所有comb
+    server_left = a_servers[idx]
+    # allocate_lv_idx_range_list = list(range(idx+1, len_levels))
+    allocate_lv_idx_range_list = list(range(state_len))
+    allocate_ranges = [range(0, min(server_left, a_tasks[i])+1) for i in allocate_lv_idx_range_list]
+    allocate_combinations = list(itertools.product(*allocate_ranges))
+    # 在comb基础上更新后续的tasks,servers，然后传入进入下个
+    for comb in allocate_combinations:
+        if sum(comb) == server_left:
+            # 此时分配就是 list(comb)[idx] = allcate_num
+            a_comb = list(comb)
+
+            a_tasks_after_comb = a_tasks.copy()
+            a_servers_after_comb = a_servers.copy()
+
+            a_tasks_after_comb =[x-y for x,y in zip(a_tasks_after_comb, a_comb)]
+            a_servers_after_comb[idx] -= server_left
+
+            a_comb[idx] += allocate_num # 这个必须得在a_tasks之后
+            # a_comb_list.append(tuple(a_comb))
+            print(f"对于分配{a_comb}后状态为{a_tasks_after_comb=} {a_servers_after_comb=}")
+            # 此时 a_comb 是当前level分配的，一种分配方式
+
+            a_servers_list.append(a_tasks_after_comb)
+            a_tasks_list.append(a_servers_after_comb)
+
+            a_combs_list.append(list(a_comb))
+            # a_combs_list.append(list(tuple(a_comb)))
+            # 保存每一个comb之后的状态和决策，后面循环/递归，需要根据目前状态继续分配下一个level，
+    return a_servers_list, a_tasks_list, a_combs_list
+def allocate_rec(tasks:list, servers:list, levels:list)->list[list[tuple]]:
+    
+    len_levels = len(levels)
+    tasks_list = [tasks]
+    servers_list = [servers]
+    combs_list = [[]]
+    all_combs_list = []
+    for idx, level in enumerate(levels):
+        print(f"当前分配状态{tasks=} {servers=}")
+        # 求 每个level的servers的分配情况，分配了之后也是有状态的。
+        # a_tasks_list = tasks_list.copy()
+        # a_servers_list = servers_list.copy()
+        a_comb_list = []
+        # for a_tasks, a_servers, a_combs in zip(a_tasks_list, a_servers_list, a_combs_list):
+        a_servers = servers.copy()
+        a_tasks = tasks.copy()
+        # 从前往后分配，先分配第一个
+        allocate_num = a_tasks[idx]
+        print(f"当前{level=} 待分配数量{a_servers[idx]=}")
+        # 剩余server数据计算，计算之后分配给后level[idx+1:]
+        server_left = a_servers[idx] - allocate_num
+        # 分配后状态更新
+        a_tasks[idx] = 0
+        a_servers[idx] = server_left
+
+        a_servers_list, a_tasks_list, a_combs_list = all_comb(a_tasks, a_servers, idx, allocate_num)
+        
+        # tasks_list = a_tasks_list
+        # servers_list = a_servers_list
+        # combs_list = a_combs_list
+        # all_combs_list.append(combs_list)
 
 
-tasks = [2, 2, 0, 0, 0]
-servers = [2, 6, 0, 0, 0]
-decisions = allocate(tasks, servers, [1, 2, 3, 4, 5])
+    print(f"{tasks_list=}\n{servers_list=}\n{combs_list=}\n{all_combs_list=}")
+
+tasks = [1, 2, 1, 0, 0]
+servers = [3, 3, 0, 0, 0]
+decisions = allocate_rec(tasks, servers, [1, 2, 3, 4, 5])
 print(decisions)
 print(decisions)
 
