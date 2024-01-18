@@ -28,7 +28,8 @@ def comb_allocations(decision:list[tuple], allocations:list[list[tuple]])->list[
 
 
 def get_min_allocate_num(tasks:list, servers:list, levels:list, last_task_lv_idx:int, last_server_lv_idx:int) -> int:
-    return  max(0, min(tasks[last_task_lv_idx], sum(tasks[:last_task_lv_idx+1]) - sum(servers[:last_server_lv_idx])))
+    left_servers_more_than_tasks_num = sum(tasks[:last_task_lv_idx+1]) - sum(servers[:last_server_lv_idx])
+    return max(0, min(tasks[last_task_lv_idx], left_servers_more_than_tasks_num))
 
 
 def allocate(tasks:list, servers:list, levels:list)->list[list[tuple]]:
@@ -38,14 +39,18 @@ def allocate(tasks:list, servers:list, levels:list)->list[list[tuple]]:
     # 递归结束
     all_allocations = []
     if last_task_lv_idx==-1 or -1==last_server_lv_idx:
+        print("case 1")
         idx = 0
         allocate_num = servers[idx] # 理论当到最后一个元素的时候，前面已经分配完毕了
         all_allocations = []
+
     elif sum(servers) > sum(tasks):
+        print("case 2")
         # 分配一个等级的servers
         # 1. 找到能分配的最小值和最大值：min n <- sum(tasks) <= sum(servers[:-1])+n and max 当前等级的task 总数
         min_allocate_num = get_min_allocate_num(tasks, servers, levels, last_task_lv_idx, last_server_lv_idx)
-        max_allocate_num = tasks[-1]
+        max_allocate_num = tasks[last_task_lv_idx]
+        print(min_allocate_num, max_allocate_num)
         # 2. 获取所有分配min-max
         for allocate_num in range(min_allocate_num, max_allocate_num+1):
             # if allocate_num:
@@ -57,14 +62,22 @@ def allocate(tasks:list, servers:list, levels:list)->list[list[tuple]]:
             a_servers = servers.copy()
         # 3. 对所有分配组合进行分配, 更新servers/tasks, 默认当前servers 分配完毕,所以删除当前servers, 做进一步分配
             a_tasks[last_task_lv_idx] -= allocate_num
+            can_cut_servers = False
+            if last_server_lv_idx == last_task_lv_idx:
+                if a_tasks[last_task_lv_idx]==0:
+                    pass 
 
-            a_servers[last_server_lv_idx] -= a_servers[last_server_lv_idx]
+            if can_cut_servers:
+                a_servers[last_server_lv_idx] -= a_servers[last_server_lv_idx]
+            else:
+                a_servers[last_server_lv_idx] -= allocate_num
             a_allocations = allocate(a_tasks, a_servers, levels)
         # 4. 对于所有的分配情况, 其生成的decision和allocate结果聚合
             new_allocations = comb_allocations(a_decision, a_allocations)
         # 5. 对上面的聚合结果进行聚合list[list[tuple]]+list[list[tuple]]
             all_allocations.extend(new_allocations)
     elif sum(servers) <= sum(tasks):
+        print("case 3")
         # 1. 当lvidx不同的时候,也就是意味着last_task_lv_idx > last_server_lv_idx当前level的server能分配的task很多, 
         #    生成分配所有servers[last_idx]到tasks[-1]~tasks[-last_task_lv_idx]的,参考之前写的方法。
         if last_task_lv_idx > last_server_lv_idx:
@@ -117,8 +130,14 @@ def allocate(tasks:list, servers:list, levels:list)->list[list[tuple]]:
 
     return all_allocations
 
-tasks = [3, 1, 0, 0, 0]
-servers = [5, 0, 0, 0, 0]
+
+def allocate_from_top(tasks:list, servers:list, levels:list)->list[list[tuple]]:
+       
+    pass
+
+
+tasks = [2, 2, 0, 0, 0]
+servers = [2, 6, 0, 0, 0]
 decisions = allocate(tasks, servers, [1, 2, 3, 4, 5])
 print(decisions)
 print(decisions)
