@@ -179,7 +179,6 @@ def all_comb(a_tasks:list, a_servers:list, idx:int, allocate_num:int):
             # a_comb_list.append(tuple(a_comb))
             print(f"对于分配{a_comb}后状态为{a_tasks_after_comb=} {a_servers_after_comb=}")
             # 此时 a_comb 是当前level分配的，一种分配方式
-
             a_servers_list.append(a_tasks_after_comb)
             a_tasks_list.append(a_servers_after_comb)
 
@@ -187,6 +186,8 @@ def all_comb(a_tasks:list, a_servers:list, idx:int, allocate_num:int):
             # a_combs_list.append(list(tuple(a_comb)))
             # 保存每一个comb之后的状态和决策，后面循环/递归，需要根据目前状态继续分配下一个level，
     return a_servers_list, a_tasks_list, a_combs_list
+
+
 def allocate_rec(tasks:list, servers:list, levels:list)->list[list[tuple]]:
     
     len_levels = len(levels)
@@ -213,7 +214,7 @@ def allocate_rec(tasks:list, servers:list, levels:list)->list[list[tuple]]:
         a_servers[idx] = server_left
 
         a_servers_list, a_tasks_list, a_combs_list = all_comb(a_tasks, a_servers, idx, allocate_num)
-        
+        print(a_servers_list, a_tasks_list, a_combs_list)
         # tasks_list = a_tasks_list
         # servers_list = a_servers_list
         # combs_list = a_combs_list
@@ -227,4 +228,26 @@ servers = [3, 3, 0, 0, 0]
 decisions = allocate_rec(tasks, servers, [1, 2, 3, 4, 5])
 print(decisions)
 print(decisions)
+
+servers = [3, 1, 5] # A
+tasks = [2, 1, 3]   # B
+levels = [2, 3, 4]  
+allocate_template = [0] * len(sum(tasks)) # C
+all_allocations = [allocate_template]# D
+
+for idx in range(len(tasks)):
+    a_allocate_template = allocate_template.copy()
+    if idx == 1:
+        a_allocate_template[0:tasks[idx]] = levels[idx]
+    else:
+        servers[idx] -= tasks[idx]
+        for k in range(idx):
+            a_allocate_template[tasks[idx]] = levels[k]
+            pass
+
+
+
+
+
+
 
