@@ -138,7 +138,34 @@ def get_all_allocations_for_decisions(allocations_for_decisions:dict, a_servers_
     return num_combinations, revenue_and_combinations
 
 
-def cul_a_cycle(T, a_servers_df, a_state_df):
+def generate_tasks(arriving_rate):
+    tasks = np.random.poisson(arriving_rate)
+    return tasks
+
+
+def update_state(state_df, tasks):
+    updated_state_df = state_df.copy()
+    
+    tasks_df = pd.DataFrame(tasks, index=state_df.index, columns=state_df.columns)
+    for city in state_df.index:
+        for lv in state_df.columns:
+            updated_state_df.loc[city, lv] += tasks_df.loc[city, lv]
+    return updated_state_df
+
+
+# 根据最优解的combination 求得业务员之后的位置
+# （业务员编号id，业务员城市，分配去的城市编号，业务员等级，城市等级）
+def update_server_cities(servers_df, allocation_for_a_day):
+    new_servers_df = servers_df.copy()
+    new_servers_df.columns = ["current_city", "lv", "day off"]
+    for allocation in allocation_for_a_day:
+        server_id, server_city, allocate_city, server_lv, city_lv = allocation[0], allocation[1], allocation[2], allocation[3], allocation[4]
+        new_servers_df["current_city"][f"server {server_id}"] = allocate_city
+    
+    return new_servers_df
+
+
+def cul_a_cycle(T, a_servers_df, a_state_df, arriving_rate_df):
     # 每次迭代，应该决策前的状态，最优决策，缩减的决策和状态，以及收益， 之后应当可以通过缩减的决策和状态获取收益，这个得做一个保存
     # 我们先假设组内直接求最优，组间组合的时候做一个缩减后的状态收益决策。
     for weekday in range(1, T+1):
