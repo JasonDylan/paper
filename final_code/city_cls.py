@@ -1,6 +1,45 @@
 import pandas as pd
 import numpy as np
 from allocate_cls import allocate
+import itertools
+
+def get_combinations(server_list, cities, current_combination, min_sum=float('inf'), min_combination=None, need_comb_num=None):
+    global a_city_distance_df
+    if len(server_list) == 0 or len(cities)==0:
+        # TODO 取消存储防止爆内存
+        current_sum = sum([a_city_distance_df[server][city] for server,city in current_combination])
+        if current_sum < min_sum:
+            min_sum = current_sum
+            min_combination = current_combination
+        if need_comb_num is not None:
+            # Filter min_combination to contain only the first need_comb_num combinations
+            pairs = itertools.combinations(min_combination, need_comb_num)
+            new_min_sum = float('inf')
+            new_min_combination = None
+            for pair in pairs:
+                current_sum = sum([a_city_distance_df[server][city] for server, city in pair])
+                if current_sum < new_min_sum:
+                    new_min_sum = current_sum
+                    new_min_combination = pair
+            min_sum = new_min_sum
+            min_combination = new_min_combination
+        return min_sum, min_combination
+
+    for i, city in enumerate(cities):
+        remaining_cities = cities[:i] + cities[i+1:]
+        new_current_combination = current_combination + [(server_list[0], city)]
+        min_sum, min_combination = get_combinations(server_list[1:], remaining_cities, new_current_combination, min_sum, min_combination, need_comb_num)
+    
+    return min_sum, min_combination
+
+
+
+# 任务等级，业务员等级，数量
+# task_lv, server_lv, allocate_num
+# 同时要递归地进入
+# 对于一个decisions 内的单个allocation，进行分配
+# 输入为指定task_lv的城市位置，有指定server_lv对应的server位置, 和分配数量，
+# 然后得到城市的位置range和server的位置range， 随机匹配allocate_num的个数量，约束是如果以及分配完的目的地不应该再次分配
 def allocate_servers_2_cities_for_a_decision(allocate_tuple, initial_state_df, servers_remain_df):
     global revenue_for_lv, a_city_distance_df
     
@@ -55,7 +94,7 @@ def allocate_servers_2_cities_for_a_decision(allocate_tuple, initial_state_df, s
         print(f"{min_combination=}")
     for server, city in min_combination:
         new_min_combination.append([server_city_id_2_server_id[server], server, city, task_lv, server_lv])
-    return final_revenue, new_min_combinations
+    return final_revenue, new_min_combination
 
 
 def allocate_servers_2_cities(decisions: list[tuple], initial_state_df, servers_remain_df)->list[dict]:
@@ -74,6 +113,29 @@ def allocate_servers_2_cities(decisions: list[tuple], initial_state_df, servers_
 
 
     return revenue_and_combination_for_decisions
+
+
+def get_all_allocations_for_decisions(allocations_for_decisions:dict, a_servers_df:pd.DataFrame, a_state_df:pd.DataFrame)->(int, list):
+    num_combinations = 1
+    for key, value in allocations_for_decisions.items():
+        num_combinations *= len(value)
+
+    # Print the number of possible combinations
+    print(num_combinations)
+
+    # Get all possible combinations of values from the dictionary
+    revenue_and_combinations = list(itertools.product(*allocations_for_decisions.values()))
+    # 
+    for item in revenue_and_combinations:
+        a_item = list(item)
+        revene_sum = 0
+        combinations = []
+        for a_dict in a_item:
+            revene_sum += a_dict["revenue"]
+            combinations.extend(a_dict["combination"])
+
+    
+    return num_combinations, revenue_and_combinations
 
 
 def cul_a_cycle(T, a_servers_df, a_state_df):
@@ -187,9 +249,22 @@ def generate_joins(task_lv_count:pd.core.series.Series, server_lv_count:pd.core.
         joins.append(current_join)  # 将最后一个决策空间划分添加到列表中
     return joins
 
+def form_all_decision_list_by_tuple(decision:tuple, tasks, servers, levels)->list[tuple]:
+    # 变成（业务员编号id，业务员城市，分配去的城市编号，业务员等级，城市等级）
+    
+    for idx, level in enumerate(levels):
+        task_num = tasks[idx]
+    pass
+
+def decisions_2_old_decisions(decisions, tasks, servers, levels)->list[list[tuple]]:
+    old_decsions = []
+    for decision in decisions:
+        old_decsions.append(form_all_decision_list_by_tuple(decision, tasks, servers, levels))
+    return old_decsions
+
 
 def generate_idx_2_joins(state_df, servers_remain_df):
-    
+    '''本函数用于,'''
     # 城市对应等级任务矩阵
     city_lv_matrix_df = state_df.iloc[:, :]
     # 任务计数，用于划分集合
@@ -214,7 +289,9 @@ def generate_idx_2_joins(state_df, servers_remain_df):
         a_tasks = [tasks[index] for index in level_indices]  # 获取与join中每个level相对应的任务数量
         a_servers = [servers[index] for index in level_indices]  # 获取与join中每个level相对应的服务器数量
         a_lvs = [levels[index] for index in level_indices]
-        decisions = allocate(a_tasks, a_servers, a_lvs)
+        decisions = allocate(tasks=a_tasks, servers=a_servers, levels=a_lvs)
+
+        old_decisions = decisions_2_old_decisions(decisions=decisions, tasks=a_tasks, servers=servers, levels=a_lvs)
         join_idx_2_decisions.update({join_idx: decisions})
     # 对每一个decision，对于不同地方和不同的人，进行排列组合分配
     # 获取每个城市情况
@@ -241,21 +318,23 @@ def get_proveng_city_dist_mat_df():
     return proveng_city_dist_mat_df
 
 
-def get_city_2_proveng_dict():
-    proveng_city_dist_mat_df = get_proveng_city_dist_mat_df()
+def get_city_2_proveng_dict(proveng_city_dist_mat_df=None):
+    if  proveng_city_dist_mat_df is None:
+        proveng_city_dist_mat_df = get_proveng_city_dist_mat_df()
     city_to_proveng_dict = proveng_city_dist_mat_df[['cityeng', 'proveng']].drop_duplicates().set_index('cityeng')['proveng'].to_dict()
     return city_to_proveng_dict
 
-def get_city_series_to_city_dict():
-    
-    proveng_city_dist_mat_df = get_proveng_city_dist_mat_df()
+def get_city_series_to_city_dict(proveng_city_dist_mat_df=None):
+    if  proveng_city_dist_mat_df is None:
+        proveng_city_dist_mat_df = get_proveng_city_dist_mat_df()
+
     city_series_to_city_dict = proveng_city_dist_mat_df[['cityeng', 'cityseries']].drop_duplicates().set_index('cityseries')['cityeng'].to_dict()
     return city_series_to_city_dict
 
 
-def get_city_to_city_series_dict():
-    
-    proveng_city_dist_mat_df = get_proveng_city_dist_mat_df()
+def get_city_to_city_series_dict(proveng_city_dist_mat_df=None):
+    if  proveng_city_dist_mat_df is None:
+        proveng_city_dist_mat_df = get_proveng_city_dist_mat_df()
     city_to_city_series_dict = proveng_city_dist_mat_df[['cityeng', 'cityseries']].drop_duplicates().set_index('cityeng')['cityseries'].to_dict()
     return city_to_city_series_dict
 
@@ -301,8 +380,8 @@ def generate_city(city_num:int=26)->(pd.DataFrame, dict):
     distance_mat_start_idx = 3
 
     # 
-    city_series_to_city_dict = get_city_series_to_city_dict()
-    city_to_proveng = get_city_2_proveng_dict()
+    city_series_to_city_dict = get_city_series_to_city_dict(proveng_city_dist_mat_df=proveng_city_dist_mat_df)
+    city_to_proveng = get_city_2_proveng_dict(proveng_city_dist_mat_df=proveng_city_dist_mat_df)
 
     # 地理距离矩阵xls 第三列是城市id, city_*, 设定纵坐标
     distance_mat = get_dist_mat_from_xls_df(proveng_city_dist_mat_df, distance_mat_start_idx, cityseries_idx)

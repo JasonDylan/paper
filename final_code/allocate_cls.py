@@ -48,21 +48,30 @@ def decode_key(encoded_key):
 all_server_task_level_2_comb = []
 def allocate(servers:list, tasks:list, levels:list) -> list[tuple]:
     print(f"{servers=}\n{tasks=}\n{levels=}")
-    # for i in range(task_len):
+    # for i in range(task_sum):
     # levels
     # allocate_lv_idx_range_list = list(range(last_server_lv_idx, last_task_lv_idx+1))
 
-    task_len = sum(tasks)
-    allocate_ranges = [levels for idx in range(task_len)]
+    task_sum = sum(tasks)
+    server_sum = sum(servers)
+    is_case_task_less_than_server = task_sum < server_sum
+    if is_case_task_less_than_server:
+        should_allocate_tasks = tasks
+    else:
+        task_should_allocate_less = task_sum - server_sum
+        should_allocate_tasks = tasks.copy()
+        should_allocate_tasks[-1]-= task_should_allocate_less
+        
+    allocate_ranges = [levels[:idx+1] for idx,task_num in enumerate(should_allocate_tasks) for i in range(task_num)]
     allocate_combinations = list(itertools.product(*allocate_ranges))
-    
     selected_combinations = []
     for comb in allocate_combinations:
         #满足两个条件的则放入
         # 对comb 相同等级分配的比如 / 同时一个tasks的分组里，
-        if is_comb_valid(comb, levels, servers) and is_comb_valid2(comb, levels, tasks):
+        if is_comb_valid(comb, levels, servers):
             # print(f"{comb=}")
             selected_combinations.append(comb)
+
     return selected_combinations
 
 if __name__ == "__main__":
