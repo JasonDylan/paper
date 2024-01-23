@@ -25,10 +25,10 @@ if __name__ == "__main__":
     V_reduce = {} # 输入一个缩减为三个省的state 和 一个action 对应结果为 对应的收益
 
     global arriving_rate_df
-    arriving_rate_df = pd.read_excel('../data/数据.xlsx', sheet_name='arriving rate', index_col=0)
-    travel_fee_df = pd.read_excel('../data/数据.xlsx', sheet_name='travel fee', index_col=0)
-    initial_state_df = pd.read_excel('../data/数据.xlsx', sheet_name='initial state', index_col=0)
-    servers_df = pd.read_excel('../data/数据.xlsx', sheet_name='servers', index_col=0) 
+    arriving_rate_df = pd.read_excel('./data/数据.xlsx', sheet_name='arriving rate', index_col=0)
+    travel_fee_df = pd.read_excel('./data/数据.xlsx', sheet_name='travel fee', index_col=0)
+    initial_state_df = pd.read_excel('./data/数据.xlsx', sheet_name='initial state', index_col=0)
+    servers_df = pd.read_excel('./data/数据.xlsx', sheet_name='servers', index_col=0) 
     # 员工
     servers_df.columns = ['current_city', 'lv', 'day off']
 
@@ -45,4 +45,4 @@ if __name__ == "__main__":
     # 这个循环，进行一次指定周期内的迭代。
 
 
-    cul_a_cycle(T, a_servers_df, a_state_df, arriving_rate_df)
+    cul_a_cycle(T, a_servers_df, a_state_df, arriving_rate_df, a_city_distance_df)
