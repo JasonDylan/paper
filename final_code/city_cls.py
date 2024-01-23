@@ -4,14 +4,14 @@ from allocate_cls import allocate
 import itertools
 from collections import Counter
 
-def get_combinations(server_list, 
-                     cities, 
+def get_combinations(server_city_id_list, 
+                     task_city_id_list, 
                      current_combination, 
                      min_cost_sum=float('inf'), 
                      min_cost_city_id_of_server_and_task_combination=None, 
                      need_comb_num=None, 
                      a_city_distance_df=None):
-    if len(server_list) == 0 or len(cities)==0:
+    if len(server_city_id_list) == 0 or len(task_city_id_list)==0:
         # TODO 取消存储防止爆内存
         current_sum = sum([a_city_distance_df[server][city] for server,city in current_combination])
         if current_sum < min_cost_sum:
@@ -31,10 +31,10 @@ def get_combinations(server_list,
             min_cost_city_id_of_server_and_task_combination = new_min_cost_city_id_of_server_and_task_combination
         return min_cost_sum, min_cost_city_id_of_server_and_task_combination
 
-    for i, city in enumerate(cities):
-        remaining_cities = cities[:i] + cities[i+1:]
-        new_current_combination = current_combination + [(server_list[0], city)]
-        min_cost_sum, min_cost_city_id_of_server_and_task_combination = get_combinations(server_list[1:], remaining_cities, new_current_combination, min_cost_sum, min_cost_city_id_of_server_and_task_combination, need_comb_num, a_city_distance_df)
+    for i, city in enumerate(task_city_id_list):
+        remaining_cities = task_city_id_list[:i] + task_city_id_list[i+1:]
+        new_current_combination = current_combination + [(server_city_id_list[0], city)]
+        min_cost_sum, min_cost_city_id_of_server_and_task_combination = get_combinations(server_city_id_list[1:], remaining_cities, new_current_combination, min_cost_sum, min_cost_city_id_of_server_and_task_combination, need_comb_num, a_city_distance_df)
     
     return min_cost_sum, min_cost_city_id_of_server_and_task_combination
 
@@ -92,7 +92,7 @@ def allocate_servers_2_cities_for_a_decision(allocate_tuple,
         = get_selected_selected_server_city_n_id_list(
             server_lv=server_lv, 
             servers_remain_df=servers_remain_df)
-    
+    # 
     server_city_id_2_server_id = {city:idx for city,idx in zip(selected_server_city_id_list, selected_server_id_list)} # 城市id转业务员id，用于生成分配策略
    
     # 获取业务员所在城市的列表
