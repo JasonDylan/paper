@@ -19,7 +19,7 @@ def get_combinations(
     if (
         len(server_city_id_list) == 0
         or len(task_city_id_list) == 0
-        or allocate_else == 0
+        # or allocate_else == 0
     ):
         assert current_combination != None
         # TODO 取消存储防止爆内存
@@ -29,10 +29,10 @@ def get_combinations(
         if current_sum < min_cost_sum:
             min_cost_sum = current_sum
             min_cost_city_id_of_server_and_task_combination_list = [current_combination]
-        elif current_sum == min_cost_sum:
-            min_cost_city_id_of_server_and_task_combination_list.append(
-                current_combination
-            )
+        # elif current_sum == min_cost_sum:
+        #     min_cost_city_id_of_server_and_task_combination_list.append(
+        #         current_combination
+        #     )
         if need_comb_num is not None:
             # Filter min_cost_city_id_of_server_and_task_combination to contain only the first need_comb_num combinations
             pairs = itertools.combinations(
@@ -306,8 +306,8 @@ def reduce_task_df(a_task_df, proveng_dict, city_num_2_name):
     reduced_task_df = a_task_df.copy()
     reduced_task_df.index = new_index
 
-    print("New a_task_df:")
-    print(reduced_task_df)
+    # print("New a_task_df:")
+    print(f"{reduced_task_df=}")
     final_reduced_task_df = reduced_task_df.groupby(reduced_task_df.index).sum()
 
     return final_reduced_task_df
@@ -490,7 +490,7 @@ def cul_a_cycle(
                     str(reduced_server),
                     str(reduced_server_allocated),
                     str(reduced_task.values.tolist()),
-                    str(reduced_allocate_task),
+                    str(reduced_allocate_task.values.tolist()),
                 ): final_revenue
             }
         )
@@ -627,6 +627,8 @@ def generate_idx_2_joins(state_df, servers_remain_df):
     task_lv_count = city_lv_matrix_df.sum()
     # 业务员等级计数，用于划分集合
     server_lv_count = servers_remain_df["lv"].value_counts().sort_index()
+    all_lv_values = range(1, 6)
+    server_lv_count = server_lv_count.reindex(all_lv_values, fill_value=0)
     level_num = city_lv_matrix_df.shape[0]  # 任务等级数量
     city_num = city_lv_matrix_df.shape[0]  # 城市数量
     # 根据levels， servers，tasks区分组别
