@@ -219,7 +219,7 @@ def allocate_servers_2_cities(
     revenue_sum = sum([i[0] for i in res])
     all_combination_for_a_decision = []
     for a_revenue_for_a_allocate, combination_for_a_allocate_list in res:
-        combination_for_a_allocate = combination_for_a_allocate_list[-1]
+        combination_for_a_allocate = combination_for_a_allocate_list[0]
 
         all_combination_for_a_decision += combination_for_a_allocate
 
@@ -583,7 +583,7 @@ def change_df_city_name_2_idx(cities: pd.DataFrame) -> (pd.DataFrame, dict):
 # 2024年1月21日 20点42分
 def get_proveng_city_dist_mat_df():
     proveng_city_dist_mat_df = pd.read_excel(
-        r"C:\Users\wuhongfei\application\paper\data\中国各城市空间权重矩阵(1).xlsx",
+        r"C:\Users\dylan\Desktop\code\paper\data\中国各城市空间权重矩阵(1).xlsx",
         sheet_name="地理距离矩阵",
     )
     return proveng_city_dist_mat_df
