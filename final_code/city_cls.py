@@ -306,8 +306,9 @@ def reduce_task_df(a_task_df, proveng_dict, city_num_2_name):
 
     print("New a_task_df:")
     print(reduced_task_df)
+    final_reduced_task_df = reduced_task_df.groupby(reduced_task_df.index).sum()
 
-    return reduced_task_df
+    return final_reduced_task_df
 
 
 def reduce_server_df(a_servers_df, proveng_dict, city_num_2_name):
@@ -318,11 +319,12 @@ def reduce_server_df(a_servers_df, proveng_dict, city_num_2_name):
         .map(city_num_2_name)
         .map(lambda x: proveng_dict[x[0]])
     )
+    city_prov_tuples = [
+        (int(idx[7:]), row["current_prov"])
+        for idx, row in reduced_servers_df.iterrows()
+    ]
 
-    print("New a_servers_df:")
-    print(reduced_servers_df)
-
-    return reduced_servers_df
+    return city_prov_tuples
 
 
 # 根据最优解的combination 求得业务员之后的位置
@@ -372,7 +374,16 @@ def allcocate_comb_2_allocate_task_df(
     return new_task_df
 
 
-def cul_a_cycle(T, a_servers_df, a_task_df, arriving_rate_df, a_city_distance_df, proveng_dict, city_num_2_name, reduce_V):
+def cul_a_cycle(
+    T,
+    a_servers_df,
+    a_task_df,
+    arriving_rate_df,
+    a_city_distance_df,
+    proveng_dict,
+    city_num_2_name,
+    reduce_V,
+):
     # 每次迭代，应该决策前的状态，最优决策，缩减的决策和状态，以及收益， 之后应当可以通过缩减的决策和状态获取收益，这个得做一个保存
     # 我们先假设组内直接求最优，组间组合的时候做一个缩减后的状态收益决策。
     for weekday in range(1, T + 1):
@@ -433,34 +444,58 @@ def cul_a_cycle(T, a_servers_df, a_task_df, arriving_rate_df, a_city_distance_df
 
         # servers_remain_df
 
-        new_task_df = a_task_df.copy() # 初始
-        
+        new_task_df = a_task_df.copy()  # 初始
         allocate_task_df = allcocate_comb_2_allocate_task_df(
             final_allocation_for_a_day, new_task_df
         )
-
-
-        reduced_server = reduce_server_df(a_servers_df=a_servers_df, proveng_dict=proveng_dict, city_num_2_name=city_num_2_name)
-        reduced_task = reduce_task_df(a_task_df=a_servers_df, proveng_dict=proveng_dict, city_num_2_name=city_num_2_name)
-        reduced_allocate_task = reduce_server_df(a_task_df=allocate_task_df, proveng_dict=proveng_dict, city_num_2_name=city_num_2_name)
         final_revenue = final_revenue
-        
         new_task_df = new_task_df - allocate_task_df  # 分配
-
         arriving_rate_matrix = arriving_rate_df.values  # 将到达率转换为NumPy数组
         current_task_df = new_task_df  # 根据你的实际情况创建当前状态的DataFrame
-        
         # 生成新任务
         new_tasks = generate_tasks(arriving_rate_matrix)
-        
+
         # 更新状态矩阵
         new_task_df = update_state(current_task_df, new_tasks)
-        
+
         # 更新业务员矩阵
         new_servers_df = update_server_cities(a_servers_df, final_allocation_for_a_day)
 
+        reduced_server = reduce_server_df(
+            a_servers_df=a_servers_df,
+            proveng_dict=proveng_dict,
+            city_num_2_name=city_num_2_name,
+        )
+        reduced_server_allocated = reduce_server_df(
+            a_servers_df=new_servers_df,
+            proveng_dict=proveng_dict,
+            city_num_2_name=city_num_2_name,
+        )
+        reduced_task = reduce_task_df(
+            a_task_df=a_task_df,
+            proveng_dict=proveng_dict,
+            city_num_2_name=city_num_2_name,
+        )
+        reduced_allocate_task = reduce_task_df(
+            a_task_df=allocate_task_df,
+            proveng_dict=proveng_dict,
+            city_num_2_name=city_num_2_name,
+        )
+
+        reduce_V[weekday].update(
+            {
+                (
+                    str(reduced_server),
+                    str(reduced_server_allocated),
+                    str(reduced_task.values.tolist()),
+                    str(reduced_allocate_task),
+                ): final_revenue
+            }
+        )
         a_task_df = new_task_df
         a_servers_df = new_servers_df
+
+    return reduce_V
 
 
 # 先判断是否可以分配，划分分配的区间，区间内任意分配，
