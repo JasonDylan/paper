@@ -412,7 +412,7 @@ def reduce_server_df(a_state_df):
 
     return reduced_state_df
 
-def reduce_state_df():
+def reduce_state_df(a_servers_df):
     # 默认是有两列index，一列省份一列市的，缩减为省份的
     reduced_servers_df = a_servers_df.copy()
     reduced_servers_df['current_prov'] = reduced_servers_df['current_city'].map(city_num_2_name).map(lambda x: province_dict[x[0]])

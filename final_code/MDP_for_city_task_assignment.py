@@ -22,7 +22,6 @@ if __name__ == "__main__":
     city_names = city_distance_df.columns
     a_city_distance_df, city_num_2_name = change_df_city_name_2_idx(cities=city_distance_df)
 
-    V_reduce = {} # 输入一个缩减为三个省的state 和 一个action 对应结果为 对应的收益
 
     global arriving_rate_df
     arriving_rate_df = pd.read_excel('./data/数据.xlsx', sheet_name='arriving rate', index_col=0)
@@ -42,7 +41,9 @@ if __name__ == "__main__":
     a_servers_df = servers_df.copy()[servers_df['current_city']<= city_num]
     saved_params = {}
     T = 7
+    reduce_V = [{} for _ in range(T)]
+    # 输入一个缩减为三个省的state 和 一个action 对应结果为 对应的收益
     # 这个循环，进行一次指定周期内的迭代。
 
-    
-    cul_a_cycle(T, a_servers_df, a_state_df, arriving_rate_df, a_city_distance_df)
+
+    cul_a_cycle(T, a_servers_df, a_state_df, arriving_rate_df, a_city_distance_df, proveng_dict, city_num_2_name, reduce_V)
