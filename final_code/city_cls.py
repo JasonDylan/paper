@@ -231,6 +231,8 @@ def allocate_servers_2_cities(
         combination_for_a_allocate_list,
     ) in allocate_servers_2_cities_for_a_decision_list:
         combination_for_a_allocate = combination_for_a_allocate_list[0]
+        if len(combination_for_a_allocate_list) > 1:
+            print(combination_for_a_allocate_list)
         all_combination_for_a_decision += combination_for_a_allocate
 
     # for a_allocate in a_decision:
@@ -482,7 +484,7 @@ def cul_a_cycle(
             city_num_2_name=city_num_2_name,
         )
 
-        reduce_V[weekday].update(
+        reduce_V[weekday-1].update(
             {
                 (
                     str(reduced_server),

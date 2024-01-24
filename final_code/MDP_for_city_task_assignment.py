@@ -48,3 +48,4 @@ if __name__ == "__main__":
     iters = 100000
     for i in range(iters):
         reduce_V = cul_a_cycle(T, a_servers_df, a_state_df, arriving_rate_df, a_city_distance_df, proveng_dict, city_num_2_name, reduce_V)
+        print(f"{i=} {reduce_V=}")

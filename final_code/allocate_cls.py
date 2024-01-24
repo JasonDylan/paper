@@ -17,7 +17,7 @@ def is_comb_valid2(comb, levels, tasks):
     last_task_num = 0
     len_tasks = len(tasks)
     for idx, task_num in enumerate(tasks):
-        # print(comb[last_task_num:last_task_num+task_num], "\r")
+        # #_print(comb[last_task_num:last_task_num+task_num], "\r")
         for allocate_level in comb[last_task_num:last_task_num+task_num]:
             if idx+1 < len_tasks and  allocate_level in levels[idx+1:]:
                 return False
@@ -47,7 +47,7 @@ def decode_key(encoded_key):
 #TODO 打表，加快生成速度
 all_server_task_level_2_comb = []
 def allocate(servers:list, tasks:list, levels:list) -> list[tuple]:
-    print(f"{servers=}\n{tasks=}\n{levels=}")
+    #_print(f"{servers=}\n{tasks=}\n{levels=}")
     # for i in range(task_sum):
     # levels
     # allocate_lv_idx_range_list = list(range(last_server_lv_idx, last_task_lv_idx+1))
@@ -69,7 +69,7 @@ def allocate(servers:list, tasks:list, levels:list) -> list[tuple]:
         #满足两个条件的则放入
         # 对comb 相同等级分配的比如 / 同时一个tasks的分组里，
         if is_comb_valid(comb, levels, servers):
-            # print(f"{comb=}")
+            # #_print(f"{comb=}")
             selected_combinations.append(comb)
 
     return selected_combinations
