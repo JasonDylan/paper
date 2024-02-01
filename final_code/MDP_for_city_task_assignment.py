@@ -6,7 +6,7 @@ from city_cls import (
     change_df_city_name_2_idx,
     cul_a_cycle,
 )
-
+import random
 
 global revenue_for_lv, a_city_distance_df, province_dict, city_num_2_name
 
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # 全局设定种子，保证，每次随机结果一致
     np.random.seed(42)
     # 生成城市规模/一个省
-    city_num = 26
+    city_num = 10
     # 生成 26个城市
     city_distance_df = generate_city(city_num=city_num)
     city_to_proveng = get_city_2_proveng_dict()
@@ -58,6 +58,7 @@ if __name__ == "__main__":
     # 输入一个缩减为三个省的state 和 一个action 对应结果为 对应的收益
     # 这个循环，进行一次指定周期内的迭代。
 
+    random.seed(42)
     iters = 100000
     for i in range(iters):
         reduce_V = cul_a_cycle(
