@@ -6,8 +6,8 @@ from collections import Counter
 
 def is_comb_valid(comb, levels, servers):
     count = Counter(comb)
-    for level in levels:
-        if level not in count or count[level] > servers[levels.index(level)]:
+    for level in count.keys():
+        if  count[level] > servers[levels.index(level)]:
             return False
     return True
 
@@ -75,6 +75,7 @@ def allocate(servers: list, tasks: list, levels: list) -> list[tuple]:
         # 满足两个条件的则放入
         # 对comb 相同等级分配的比如 / 同时一个tasks的分组里，
         if is_comb_valid(comb, levels, servers):
+
             # #_print(f"{comb=}")
             selected_combinations.append(comb)
 
@@ -82,5 +83,7 @@ def allocate(servers: list, tasks: list, levels: list) -> list[tuple]:
 
 
 if __name__ == "__main__":
-    allocate(servers=[3, 1, 5], tasks=[2, 1, 3], levels=[2, 3, 4])
-    allocate(servers=[1, 0, 0, 2, 1], tasks=[0, 0, 0, 2, 0] , levels=[1, 2, 3, 4, 5])
+    selected_combinations = allocate(servers=[3, 0, 5], tasks=[2, 0, 3], levels=[2, 3, 4])
+    print(selected_combinations)
+    selected_combinations2 = allocate(servers=[1, 0, 0, 2, 1], tasks=[0, 0, 0, 2, 0] , levels=[1, 2, 3, 4, 5])
+    print(selected_combinations2)
