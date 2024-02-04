@@ -83,3 +83,4 @@ def allocate(servers: list, tasks: list, levels: list) -> list[tuple]:
 
 if __name__ == "__main__":
     allocate(servers=[3, 1, 5], tasks=[2, 1, 3], levels=[2, 3, 4])
+    allocate(servers=[1, 0, 0, 2, 1], tasks=[0, 0, 0, 2, 0] , levels=[1, 2, 3, 4, 5])
