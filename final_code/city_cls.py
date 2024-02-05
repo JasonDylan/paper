@@ -348,10 +348,16 @@ def update_server_cities(servers_df, allocation_for_a_day):
     return new_servers_df
 
 
-def get_allocation_for_a_day(final_revenue_n_combination_list,
-                             remain_servers_df, a_task_df,
-                             arriving_rate_df, weekday, proveng_dict, city_num_2_name,reduce_V
-                             ) -> (float, list[tuple]):
+def get_allocation_for_a_day(
+    final_revenue_n_combination_list,
+    remain_servers_df,
+    a_task_df,
+    arriving_rate_df,
+    weekday,
+    proveng_dict,
+    city_num_2_name,
+    reduce_V,
+) -> (float, list[tuple]):
     allocation_for_a_day = []
     # 做决策了这里就是要，挑一个最大的，同时要吧state的值压缩了之后做保存，当前state情况的最优决策
     max_revenue = 0
@@ -362,7 +368,8 @@ def get_allocation_for_a_day(final_revenue_n_combination_list,
 
         a_servers_df = remain_servers_df
         final_allocation_for_a_day = combination
-        reduce_V, new_task_df, new_servers_df,allocate_task_df = save_reduct_v(a_task_df, a_servers_df, final_allocation_for_a_day, arriving_rate_df, weekday, proveng_dict, city_num_2_name, revenue, reduce_V)
+
+        new_task_df, new_servers_df, allocate_task_df = allocate_reduce_df(final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df)
         reduceV_revenue = get_a_state_revenue(
             a_servers_df,
             new_servers_df,
@@ -373,11 +380,11 @@ def get_allocation_for_a_day(final_revenue_n_combination_list,
             proveng_dict,
             city_num_2_name,
         )
-    
-        if max_revenue < revenue+reduceV_revenue:
-            max_revenue = revenue+reduceV_revenue
+
+        if max_revenue < revenue + reduceV_revenue:
+            max_revenue = revenue + reduceV_revenue
             max_combination = combination
-    
+
     allocation_for_a_day = max_combination
     return max_revenue, allocation_for_a_day
 
@@ -396,7 +403,16 @@ def allcocate_comb_2_allocate_task_df(
     return new_task_df
 
 
-def allocate_servers_2_citys_MDP(remain_servers_df, a_task_df, a_city_distance_df, arriving_rate_df, weekday, proveng_dict, city_num_2_name,reduce_V):
+def allocate_servers_2_citys_MDP(
+    remain_servers_df,
+    a_task_df,
+    a_city_distance_df,
+    arriving_rate_df,
+    weekday,
+    proveng_dict,
+    city_num_2_name,
+    reduce_V,
+):
     # 根据 lv 来做分组, join 分组后的结果应该
     join_idx_2_task_lv_server_lv_num = generate_idx_2_joins(
         a_task_df, remain_servers_df
@@ -443,8 +459,13 @@ def allocate_servers_2_citys_MDP(remain_servers_df, a_task_df, a_city_distance_d
     # 获取最好的分配
     final_revenue, final_allocation_for_a_day = get_allocation_for_a_day(
         final_revenue_n_combination_list,
-        remain_servers_df, a_task_df,
-        arriving_rate_df, weekday, proveng_dict, city_num_2_name, reduce_V
+        remain_servers_df,
+        a_task_df,
+        arriving_rate_df,
+        weekday,
+        proveng_dict,
+        city_num_2_name,
+        reduce_V,
     )
     return final_revenue, final_allocation_for_a_day
 
@@ -600,8 +621,9 @@ def single_stage_opt_allocate_servers_2_citys(
     # 获取最好的分配
     final_revenue, final_allocation_for_a_day = get_allocation_for_a_day(
         final_revenue_n_combination_list,
-        remain_servers_df, a_task_df,
-        # arriving_rate_df, weekday, proveng_dict, city_num_2_name,reduce_V #TODO 
+        remain_servers_df,
+        a_task_df,
+        # arriving_rate_df, weekday, proveng_dict, city_num_2_name,reduce_V #TODO
     )
     return final_revenue, final_allocation_for_a_day
 
@@ -683,24 +705,28 @@ def get_a_state_revenue(
         city_num_2_name=city_num_2_name,
     )
 
-    revenue = reduce_V[weekday - 1][(
-                str(reduced_server),
-                str(reduced_server_allocated),
-                str(reduced_task.values.tolist()),
-                str(reduced_allocate_task.values.tolist()),
-            )]
-    
+    revenue = reduce_V[weekday - 1][
+        (
+            str(reduced_server),
+            str(reduced_server_allocated),
+            str(reduced_task.values.tolist()),
+            str(reduced_allocate_task.values.tolist()),
+        )
+    ]
 
+    print(f"get_a_state_revenue {weekday=} {revenue=} ", (
+            str(reduced_server),
+            str(reduced_server_allocated),
+            str(reduced_task.values.tolist()),
+            str(reduced_allocate_task.values.tolist()),
+        ))
     return revenue
 
-
-def save_reduct_v(a_task_df, a_servers_df, final_allocation_for_a_day, arriving_rate_df, weekday, proveng_dict, city_num_2_name, final_revenue, reduce_V):
-    new_task_df = a_task_df.copy()  # 初始
+def allocate_reduce_df(final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df):
     allocate_task_df = allcocate_comb_2_allocate_task_df(
-        final_allocation_for_a_day, new_task_df
+        final_allocation_for_a_day, a_task_df
     )
-    final_revenue = final_revenue
-    new_task_df = new_task_df - allocate_task_df  # 分配
+    new_task_df = a_task_df - allocate_task_df  # 分配
 
     current_task_df = new_task_df  # 根据你的实际情况创建当前状态的DataFrame
     # 生成新任务
@@ -712,6 +738,20 @@ def save_reduct_v(a_task_df, a_servers_df, final_allocation_for_a_day, arriving_
 
     # 更新业务员矩阵
     new_servers_df = update_server_cities(a_servers_df, final_allocation_for_a_day)
+    return new_task_df, new_servers_df, allocate_task_df
+
+def save_reduct_v(
+    a_task_df,
+    a_servers_df,
+    final_allocation_for_a_day,
+    arriving_rate_df,
+    weekday,
+    proveng_dict,
+    city_num_2_name,
+    final_revenue,
+    reduce_V,
+):
+    new_task_df, new_servers_df, allocate_task_df = allocate_reduce_df(final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df)
 
     reduce_V = save_a_state_revenue(
         a_servers_df,
@@ -726,7 +766,6 @@ def save_reduct_v(a_task_df, a_servers_df, final_allocation_for_a_day, arriving_
     )
 
     return reduce_V, new_task_df, new_servers_df, allocate_task_df
-
 
 
 def cul_a_cycle(
@@ -752,11 +791,27 @@ def cul_a_cycle(
 
         # remain_servers_df
         final_revenue, final_allocation_for_a_day = allocate_servers_2_citys_MDP(
-            remain_servers_df, a_task_df, a_city_distance_df,
-            arriving_rate_df, weekday, proveng_dict, city_num_2_name,reduce_V
+            remain_servers_df,
+            a_task_df,
+            a_city_distance_df,
+            arriving_rate_df,
+            weekday,
+            proveng_dict,
+            city_num_2_name,
+            reduce_V,
         )
 
-        reduce_V, new_task_df, new_servers_df, allocate_task_df = save_reduct_v(a_task_df, a_servers_df, final_allocation_for_a_day, arriving_rate_df, weekday, proveng_dict, city_num_2_name, final_revenue, reduce_V)
+        reduce_V, new_task_df, new_servers_df, allocate_task_df = save_reduct_v(
+            a_task_df,
+            a_servers_df,
+            final_allocation_for_a_day,
+            arriving_rate_df,
+            weekday,
+            proveng_dict,
+            city_num_2_name,
+            final_revenue,
+            reduce_V,
+        )
 
         a_task_df = new_task_df
         a_servers_df = new_servers_df
@@ -788,12 +843,11 @@ def cul_a_cycle_rnd(
             remain_servers_df, a_task_df, a_city_distance_df
         )
 
-        new_task_df = a_task_df.copy()  # 初始
         allocate_task_df = allcocate_comb_2_allocate_task_df(
-            final_allocation_for_a_day, new_task_df
+            final_allocation_for_a_day, a_task_df
         )
 
-        new_task_df = new_task_df - allocate_task_df  # 分配
+        new_task_df = a_task_df - allocate_task_df  # 分配
         arriving_rate_matrix = arriving_rate_df.values  # 将到达率转换为NumPy数组
         current_task_df = new_task_df  # 根据你的实际情况创建当前状态的DataFrame
         # 生成新任务
@@ -869,12 +923,11 @@ def cul_a_cycle_nearest(
             remain_servers_df, a_task_df, a_city_distance_df
         )
 
-        new_task_df = a_task_df.copy()  # 初始
         allocate_task_df = allcocate_comb_2_allocate_task_df(
-            final_allocation_for_a_day, new_task_df
+            final_allocation_for_a_day, a_task_df
         )
 
-        new_task_df = new_task_df - allocate_task_df  # 分配
+        new_task_df = a_task_df - allocate_task_df  # 分配
         arriving_rate_matrix = arriving_rate_df.values  # 将到达率转换为NumPy数组
         current_task_df = new_task_df  # 根据你的实际情况创建当前状态的DataFrame
         # 生成新任务
@@ -950,12 +1003,11 @@ def cul_a_cycle_single_stage(
             remain_servers_df, a_task_df, a_city_distance_df
         )
 
-        new_task_df = a_task_df.copy()  # 初始
         allocate_task_df = allcocate_comb_2_allocate_task_df(
-            final_allocation_for_a_day, new_task_df
+            final_allocation_for_a_day, a_task_df
         )
 
-        new_task_df = new_task_df - allocate_task_df  # 分配
+        new_task_df = a_task_df - allocate_task_df  # 分配
         arriving_rate_matrix = arriving_rate_df.values  # 将到达率转换为NumPy数组
         current_task_df = new_task_df  # 根据你的实际情况创建当前状态的DataFrame
         # 生成新任务
