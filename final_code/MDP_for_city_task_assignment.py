@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # 全局设定种子，保证，每次随机结果一致
     np.random.seed(42)
     # 生成城市规模/一个省
-    city_num = 2
+    city_num = 5
     # 生成 26个城市
     city_distance_df = generate_city(city_num=city_num)
     city_to_proveng = get_city_2_proveng_dict()
@@ -47,8 +47,8 @@ if __name__ == "__main__":
     servers_df.columns = ["current_city", "lv", "day off"]
 
     # 对于每个join，产生其分配方案，生成所有分配方案，分配方案是指
-    # 当前日子，对于每个城市的状态，业务员的状态，生成一组对业务员的分配，
-    # 可能为（业务员编号id，业务员城市，分配去的城市编号，业务员等级，城市等级）
+    # 当前日子，对于每个城市的状态，业务员的状态，生成一组对业务员的分配
+    # 可能为（业务员编号id，业务员城市，分配去的城市编号，业务员等级，城市等级
 
     arriving_rate_df = arriving_rate_df[:city_num]
     a_state_df = initial_state_df.copy()[:city_num]
@@ -58,18 +58,49 @@ if __name__ == "__main__":
     reduce_V = [{} for _ in range(T)]
     # 输入一个缩减为三个省的state 和 一个action 对应结果为 对应的收益
     # 这个循环，进行一次指定周期内的迭代。
-
+    reduce_V_actual = [{} for _ in range(T)]
     random.seed(42)
-    iters = 100000
-    for i in range(iters):
-        reduce_V = cul_a_cycle(
-            T,
-            a_servers_df,
-            a_state_df,
-            arriving_rate_df,
-            a_city_distance_df,
-            proveng_dict,
-            city_num_2_name,
-            reduce_V,
+    iters = 10000
+    
+    reduce_V_iter = [[{} for _ in range(T)] for a_iter in range(iters)]
+    reduce_V_actual_iter = [[{} for _ in range(T)] for a_iter in range(iters)]
+    for it in range(iters):
+        reduce_V, reduce_V_iter = cul_a_cycle(
+            T=T,
+            a_servers_df=a_servers_df,
+            a_task_df=a_state_df,
+            arriving_rate_df=arriving_rate_df,
+            a_city_distance_df=a_city_distance_df,
+            proveng_dict=proveng_dict,
+            city_num_2_name=city_num_2_name,
+            reduce_V=reduce_V,
+            reduce_V_iter=reduce_V_iter,
+            reduce_V_actual=reduce_V_actual,
+            a_iter = it
         )
-        print(f"{i=} {reduce_V=}")
+        print(f"---------------------------------------------------------------iter:{it=}--------------------------------------------------------------- ")
+
+        ## 计算V
+        
+        all_V_from_a_round =  reduce_V_iter[it]
+        temp_sum_from_T = 0
+        sum_diff = 0
+        for weekday in range(T-1,-1,-1):
+            kv = all_V_from_a_round[weekday]
+            if len(kv.keys()) > 1:
+                print(kv)
+            key = list(kv.keys())[0]
+            value = list(kv.values())[0]
+            # print(f"{value}")
+            temp_sum_from_T += value
+            old_V_actual = reduce_V_actual[weekday].get(key, 0)
+            sum_diff += abs(old_V_actual-temp_sum_from_T)
+            print(f"{old_V_actual=}, {temp_sum_from_T=}")
+            reduce_V_actual[weekday].update({key:temp_sum_from_T})
+            reduce_V_actual_iter[it][weekday].update({key:temp_sum_from_T})
+            # reduce_V_actual[it][] = 
+        ## 上一次迭代和本地迭代结果差距计算, 问题：结果差如何计算，整个V矩阵计算么，还是对于单独一次的上下次计算？
+        print(f"{sum_diff=}")
+        if sum_diff< 1:
+            break
+    print(f"---------------------------------------------------------------DONE--------------------------------------------------------------- ")
