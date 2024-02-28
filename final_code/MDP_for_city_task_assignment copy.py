@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # 全局设定种子，保证，每次随机结果一致
     np.random.seed(42)
     # 生成城市规模/一个省
-    city_num = 5
+    city_num = 13
     # 生成 26个城市
     city_distance_df = generate_city(city_num=city_num)
     city_to_proveng = get_city_2_proveng_dict()
@@ -61,9 +61,7 @@ if __name__ == "__main__":
     reduce_V_actual = [{} for _ in range(T)]
     random.seed(42)
     iters = 10000
-     # 修改保存的key value 的key 值为状态，而不是当前状态+决策状态/应该改为当前状态+新到达任务
-    # 需要修改的地方是？保存的地方 save 和get
-    # 同时需要一个保存每个新产生的城市的矩阵
+    
     reduce_V_iter = [[{} for _ in range(T)] for a_iter in range(iters)]
     reduce_V_actual_iter = [[{} for _ in range(T)] for a_iter in range(iters)]
     for it in range(iters):
