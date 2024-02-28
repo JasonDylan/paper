@@ -723,6 +723,10 @@ def get_a_state_revenue(
     return revenue
 
 def allocate_reduce_df(final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df):
+    # 传入分配情况/状态举证/到达矩阵
+    # 返回新增任务后的状态矩阵/ 分配的矩阵
+    # todo 这里应该对任务新增
+
     allocate_task_df = allcocate_comb_2_allocate_task_df(
         final_allocation_for_a_day, a_task_df
     )

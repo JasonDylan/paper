@@ -61,6 +61,9 @@ if __name__ == "__main__":
 
     random.seed(42)
     iters = 100000
+    # 修改保存的key value 的key 值为状态，而不是当前状态+决策状态/应该改为当前状态+新到达任务
+    # 需要修改的地方是？保存的地方 save 和get
+    # 同时需要一个保存每个新产生的城市的矩阵
     for i in range(iters):
         reduce_V = cul_a_cycle(
             T,
