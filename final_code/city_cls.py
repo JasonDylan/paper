@@ -645,6 +645,7 @@ def single_stage_opt_allocate_servers_2_citys(
 def save_a_state_revenue(
     a_servers_df,
     new_servers_df,
+    new_task_df,
     a_task_df,
     allocate_task_df,
     final_revenue,
@@ -675,12 +676,19 @@ def save_a_state_revenue(
         proveng_dict=proveng_dict,
         city_num_2_name=city_num_2_name,
     )
-    key = (
-            str(reduced_server),
-            str(reduced_server_allocated),
-            str(reduced_task.values.tolist()),
-            str(reduced_allocate_task.values.tolist()),
-        )
+    reduced_new_task = reduce_task_df(
+        a_task_df=new_task_df,
+        proveng_dict=proveng_dict,
+        city_num_2_name=city_num_2_name,
+    )
+    # S2 new server task 组成
+    key = (reduced_task.values.tolist(), reduced_new_task.values.tolist())
+    # key = (
+    #         str(reduced_server),
+    #         str(reduced_server_allocated),
+    #         str(reduced_task.values.tolist()),
+    #         str(reduced_allocate_task.values.tolist()),
+    #     )
     reduce_V_iter[a_iter][weekday - 1].update({key: final_revenue})
     reduce_V[weekday - 1].update({key: final_revenue})
 
@@ -774,17 +782,18 @@ def save_reduct_v(
     new_task_df, new_servers_df, allocate_task_df = allocate_reduce_df(final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df)
 
     reduce_V,reduce_V_iter = save_a_state_revenue(
-        a_servers_df,
-        new_servers_df,
-        a_task_df,
-        allocate_task_df,
-        final_revenue,
-        reduce_V,
-        reduce_V_iter,
-        weekday,
-        proveng_dict,
-        city_num_2_name,
-        a_iter
+        a_servers_df=a_servers_df,
+        new_servers_df=new_servers_df,
+        new_task_df=new_task_df,
+        a_task_df=a_task_df,
+        allocate_task_df=allocate_task_df,
+        final_revenue=final_revenue,
+        reduce_V=reduce_V,
+        reduce_V_iter=reduce_V_iter,
+        weekday=weekday,
+        proveng_dict=proveng_dict,
+        city_num_2_name=city_num_2_name,
+        a_iter=a_iter
     )
 
     return reduce_V, reduce_V_iter,  new_task_df, new_servers_df, allocate_task_df
@@ -1391,6 +1400,8 @@ def generate_city(city_num: int = 26) -> (pd.DataFrame, dict):
         index=pd.MultiIndex.from_tuples(city_columns, names=column_names),
         columns=pd.MultiIndex.from_tuples(city_columns, names=column_names),
     )
+    city_df.to_excel(rf"D:\Users\sjc\algorithm\paper\city_{city_num}.xlsx")
+    print(rf"D:\Users\sjc\algorithm\paper\city_{city_num}.xlsx")
     return city_df
 
 
