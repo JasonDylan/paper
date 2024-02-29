@@ -88,14 +88,18 @@ if __name__ == "__main__":
         temp_sum_from_T = 0
         sum_diff = 0
         for weekday in range(T-1,-1,-1):
+            S2=all_V_from_a_round[weekday]
+            S1=all_V_from_a_round[weekday-1]
             kv = all_V_from_a_round[weekday]
+            # V(S1) = R(S1)+V(S2')
             if len(kv.keys()) > 1:
                 print(kv)
             key = list(kv.keys())[0]
             value = list(kv.values())[0]
+            key_S2 = list(S2.keys())[0]
             # print(f"{value}")
             temp_sum_from_T += value
-            old_V_actual = reduce_V_actual[weekday].get(key, 0)
+            old_V_actual = reduce_V_actual[weekday].get(key_S2, 0)
             sum_diff += abs(old_V_actual-temp_sum_from_T)
             print(f"{old_V_actual=}, {temp_sum_from_T=}")
             reduce_V_actual[weekday].update({key:temp_sum_from_T})

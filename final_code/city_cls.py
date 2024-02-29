@@ -376,6 +376,7 @@ def get_allocation_for_a_day(
         reduceV_revenue = get_a_state_revenue(
             a_servers_df=a_servers_df,
             new_servers_df=new_servers_df,
+            new_task_df=new_task_df,
             a_task_df=a_task_df,
             allocate_task_df=allocate_task_df,
             reduce_V=reduce_V,
@@ -682,13 +683,13 @@ def save_a_state_revenue(
         city_num_2_name=city_num_2_name,
     )
     # S2 new server task 组成
-    key = (reduced_task.values.tolist(), reduced_new_task.values.tolist())
-    # key = (
-    #         str(reduced_server),
-    #         str(reduced_server_allocated),
-    #         str(reduced_task.values.tolist()),
-    #         str(reduced_allocate_task.values.tolist()),
-    #     )
+    # key = (reduced_server, reduced_task.values.tolist())
+    key = (
+            str(reduced_server),
+            str(reduced_server_allocated),
+            str(reduced_task.values.tolist()),
+            str(reduced_allocate_task.values.tolist()),
+        )
     reduce_V_iter[a_iter][weekday - 1].update({key: final_revenue})
     reduce_V[weekday - 1].update({key: final_revenue})
 
@@ -698,6 +699,7 @@ def save_a_state_revenue(
 def get_a_state_revenue(
     a_servers_df,
     new_servers_df,
+    new_task_df,
     a_task_df,
     allocate_task_df,
     reduce_V,
@@ -728,12 +730,20 @@ def get_a_state_revenue(
         proveng_dict=proveng_dict,
         city_num_2_name=city_num_2_name,
     )
-    key = (
-            str(reduced_server),
-            str(reduced_server_allocated),
-            str(reduced_task.values.tolist()),
-            str(reduced_allocate_task.values.tolist()),
-        )
+    
+    reduced_new_task = reduce_task_df(
+        a_task_df=new_task_df,
+        proveng_dict=proveng_dict,
+        city_num_2_name=city_num_2_name,
+    )
+    # S2 new server task 组成
+    key = (reduced_server_allocated, reduced_new_task.values.tolist())
+    # key = (
+    #         str(reduced_server),
+    #         str(reduced_server_allocated),
+    #         str(reduced_task.values.tolist()),
+    #         str(reduced_allocate_task.values.tolist()),
+    #     )
     if key in reduce_V_actual[weekday-1].keys():
         revenue = reduce_V_actual[weekday-1][key]
     else:
