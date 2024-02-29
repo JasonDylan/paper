@@ -98,8 +98,8 @@ if __name__ == "__main__":
             value = list(kv.values())[0]
             key_S2 = list(S2.keys())[0]
             # print(f"{value}")
-            temp_sum_from_T += value
             old_V_actual = reduce_V_actual[weekday].get(key_S2, 0)
+            temp_sum_from_T = value+old_V_actual
             sum_diff += abs(old_V_actual-temp_sum_from_T)
             print(f"{old_V_actual=}, {temp_sum_from_T=}")
             reduce_V_actual[weekday].update({key:temp_sum_from_T})
