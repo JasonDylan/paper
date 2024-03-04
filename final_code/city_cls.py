@@ -7,6 +7,28 @@ from allocate_cls import allocate
 import random
 
 
+
+class CityDistanceManager:
+    def __init__(self, city_id_distance_df):
+        self.city_id_distance_df = city_id_distance_df
+        self.city_ids = city_id_distance_df.columns.tolist()
+        self.city_id_2_sorted_cities = [self.get_sorted_cities(city_id=city_id) for city_id in self.city_ids] 
+
+    def get_sorted_cities(self, city_id):
+        distance = self.city_id_distance_df[city_id]
+        sorted_indices = np.argsort(distance)
+        sorted_cities = [(distance.index[idx], distance.iloc[idx]) for idx in sorted_indices]
+        return sorted_cities
+
+    def get_nearest_cities(self, city_id, n=3):
+        nearest_cities = self.city_id_2_sorted_cities[city_id][1:n+1]
+        return nearest_cities
+    
+    def get_nearest_cities(self, city_id, task_city_ids, n=3):
+        sorted_cities = self.city_id_2_sorted_cities[city_id]
+        nearest_cities = [city for city in sorted_cities if city[0] in task_city_ids][:n]
+        return nearest_cities
+    
 def get_combinations(
     server_city_id_list,
     task_city_id_list,
@@ -143,7 +165,7 @@ def allocate_servers_2_cities_for_a_decision_nearest_n_city(
     server_city_id_2_server_id = {
         city: idx
         for city, idx in zip(selected_server_city_id_list, selected_server_id_list)
-    }  # 城市id转业务员id，用于生成分配策略
+    }  # 城市id转业务员id ， 用于生成分配策略
 
     # 获取业务员所在城市的列表
     # 生成所有城市-业务员位置的排列组合
@@ -158,6 +180,18 @@ def allocate_servers_2_cities_for_a_decision_nearest_n_city(
         a_city_distance_df=a_city_distance_df,
         allocate_else=allocate_num,
     )
+    # 初始化 CityDistanceManager
+    manager = CityDistanceManager(a_city_distance_df, )
+
+
+    assignment_combinations = []
+    for server_city_id in selected_server_city_id_list:
+        nearest_cities = manager.get_nearest_cities(server_city_id, selected_task_city_id_list_repeated, n=3)
+        combinations = list(itertools.product([server_city_id], nearest_cities))
+        assignment_combinations.extend(combinations)
+    # todo 修改revenue 返回 只有一个的问题
+    # todo 查看assignment_combinations，是否都放入list
+
     # else:
     #     min_cost_city_id_of_server_and_task_combination = [(task_lv, server_lv)]
     #     min_cost_sum  =
@@ -1381,7 +1415,7 @@ def change_df_city_name_2_idx(cities: pd.DataFrame) -> (pd.DataFrame, dict):
 
 # 2024年1月21日 20点42分
 def get_proveng_city_dist_mat_df(
-    path=r"D:\Users\sjc\algorithm\paper\data\中国各城市空间权重矩阵(1).xlsx",
+    path=r"C:\Users\dylan\Desktop\code\paper\data\中国各城市空间权重矩阵(1).xlsx",
 ):
     proveng_city_dist_mat_df = pd.read_excel(
         path,
