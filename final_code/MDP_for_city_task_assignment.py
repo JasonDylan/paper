@@ -32,7 +32,7 @@ if __name__ == "__main__":
     )
 
     global arriving_rate_df
-    
+
     travel_fee_df = pd.read_excel(
         "./data/数据.xlsx", sheet_name="travel fee", index_col=0
     )
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     reduce_V_actual = [{} for _ in range(T)]
     random.seed(42)
     iters = 10000
-     # 修改保存的key value_S1 的key 值为状态，而不是当前状态+决策状态/应该改为当前状态+新到达任务
+    # 修改保存的key value_S1 的key 值为状态，而不是当前状态+决策状态/应该改为当前状态+新到达任务
     # 需要修改的地方是？保存的地方 save 和get
     # 同时需要一个保存每个新产生的城市的矩阵
     reduce_V_iter = [[{} for _ in range(T)] for a_iter in range(iters)]
@@ -78,35 +78,39 @@ if __name__ == "__main__":
             reduce_V=reduce_V,
             reduce_V_iter=reduce_V_iter,
             reduce_V_actual=reduce_V_actual,
-            a_iter = it
+            a_iter=it,
         )
-        print(f"---------------------------------------------------------------iter:{it=}--------------------------------------------------------------- ")
+        print(
+            f"---------------------------------------------------------------iter:{it=}--------------------------------------------------------------- "
+        )
 
         ## 计算V
-        
-        all_V_from_a_round =  reduce_V_iter[it]
+
+        all_V_from_a_round = reduce_V_iter[it]
         new_V_actual_S1 = 0
         sum_diff = 0
-        for weekday in range(T-1,0,-1):
-            S1=all_V_from_a_round[weekday-1]
+        for weekday in range(T - 1, 0, -1):
+            S1 = all_V_from_a_round[weekday - 1]
             S2 = all_V_from_a_round[weekday]
             # V(S1) = R(S1)+V(S2')
             if len(S2.keys()) > 1:
                 print(S2)
             key_S1 = list(S2.keys())[0]
-            value_S1 = list(S2.values())[0] 
+            value_S1 = list(S2.values())[0]
             key_S2 = list(S2.keys())[0]
             # print(f"{value_S1}")
             old_V_actual_S2 = reduce_V_actual[weekday].get(key_S2, 0)
-            new_V_actual_S1 = value_S1+old_V_actual_S2
+            new_V_actual_S1 = value_S1 + old_V_actual_S2
             old_V_actual_S1 = reduce_V_actual[weekday].get(key_S1, 0)
-            sum_diff += abs(old_V_actual_S1-new_V_actual_S1)
+            sum_diff += abs(old_V_actual_S1 - new_V_actual_S1)
             print(f"{old_V_actual_S2=}, {new_V_actual_S1=}")
-            reduce_V_actual[weekday].update({key_S1:new_V_actual_S1})
-            reduce_V_actual_iter[it][weekday].update({key_S1:new_V_actual_S1})
-            # reduce_V_actual[it][] = 
+            reduce_V_actual[weekday].update({key_S1: new_V_actual_S1})
+            reduce_V_actual_iter[it][weekday].update({key_S1: new_V_actual_S1})
+            # reduce_V_actual[it][] =
         ## 上一次迭代和本地迭代结果差距计算, 问题：结果差如何计算，整个V矩阵计算么，还是对于单独一次的上下次计算？
         print(f"{sum_diff=}")
-        if sum_diff< 1:
+        if sum_diff < 1:
             break
-    print(f"---------------------------------------------------------------DONE--------------------------------------------------------------- ")
+    print(
+        f"---------------------------------------------------------------DONE--------------------------------------------------------------- "
+    )
