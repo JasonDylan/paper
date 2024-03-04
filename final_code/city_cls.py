@@ -114,7 +114,85 @@ def get_selected_selected_server_city_n_id_list(server_lv, remain_servers_df):
 
     return selected_server_id_list, selected_server_city_id_list
 
+# 任务等级，业务员等级，数量
+# task_lv, server_lv, allocate_num
+# 分配指定等级对应的城市和业务员位置
+def allocate_servers_2_cities_for_a_decision_nearest_3_city(
+    allocate_tuple, a_task_df, remain_servers_df, a_city_distance_df
+):
+    #todo 修改为从最近的3个城市选择，而不是得到全排列
+    #
+    task_lv, server_lv, allocate_num = allocate_tuple
+    # 完成tasklv的任务可以获得的奖励
+    revenue = get_revenue_by_task_and_num(task_lv, allocate_num)
+    min_cost_sum = 0
 
+    # 获取指定level为task_lv的task的城市id
+    selected_task_city_id_list_repeated = get_selected_task_lv_city_id_list(
+        task_lv=task_lv, a_task_df=a_task_df
+    )
+    # 获取指定level为server_lv的server的城市id
+    (
+        selected_server_id_list,
+        selected_server_city_id_list,
+    ) = get_selected_selected_server_city_n_id_list(
+        server_lv=server_lv, remain_servers_df=remain_servers_df
+    )
+
+    server_city_id_2_server_id = {
+        city: idx
+        for city, idx in zip(selected_server_city_id_list, selected_server_id_list)
+    }  # 城市id转业务员id，用于生成分配策略
+
+    # 获取业务员所在城市的列表
+    # 生成所有城市-业务员位置的排列组合
+    # 获取 满足task_lv要求的城市 和 满足 server_lv 的server 条件下的所有分配
+    (
+        min_cost_sum,
+        min_cost_city_id_of_server_and_task_combination_list,
+    ) = get_combinations(
+        selected_server_city_id_list,
+        selected_task_city_id_list_repeated,
+        current_combination=[],
+        a_city_distance_df=a_city_distance_df,
+        allocate_else=allocate_num,
+    )
+    # else:
+    #     min_cost_city_id_of_server_and_task_combination = [(task_lv, server_lv)]
+    #     min_cost_sum  =
+    # print("min Combination:", min_cost_city_id_of_server_and_task_combination) # cost最小的组合
+    # print("min Sum:", min_cost_sum)
+    final_revenue = revenue - min_cost_sum
+
+    # 分配后应该更新server 位置 为城市
+    # columns = ['业务员编号id', '业务员城市', '分配去的城市编号', '城市等级', '业务员等级']
+
+    # 存到内存
+    new_min_cost_city_id_of_server_and_task_combination_list = []
+    # if min_cost_city_id_of_server_and_task_combination:
+    #     print(min_cost_city_id_of_server_and_task_combination)
+    # else:
+    #     print(f"{min_cost_city_id_of_server_and_task_combination=}")
+    for (
+        min_cost_city_id_of_server_and_task_combination
+    ) in min_cost_city_id_of_server_and_task_combination_list:
+        new_min_cost_city_id_of_server_and_task_combination = []
+        for server_city_id, city_id in min_cost_city_id_of_server_and_task_combination:
+            new_min_cost_city_id_of_server_and_task_combination.append(
+                [
+                    server_city_id_2_server_id[server_city_id],
+                    server_city_id,
+                    city_id,
+                    task_lv,
+                    server_lv,
+                ]
+            )
+            # columns = ['业务员编号id', '业务员城市', '分配去的城市编号', '城市等级', '业务员等级']
+        new_min_cost_city_id_of_server_and_task_combination_list.append(
+            new_min_cost_city_id_of_server_and_task_combination
+        )
+
+    return final_revenue, new_min_cost_city_id_of_server_and_task_combination_list
 # 任务等级，业务员等级，数量
 # task_lv, server_lv, allocate_num
 # 分配指定等级对应的城市和业务员位置
@@ -1285,7 +1363,7 @@ def change_df_city_name_2_idx(cities: pd.DataFrame) -> (pd.DataFrame, dict):
 
 
 # 2024年1月21日 20点42分
-def get_proveng_city_dist_mat_df(path="/home/junchengshen/code/paper/data/中国各城市空间权重矩阵(1).xlsx"):
+def get_proveng_city_dist_mat_df(path=r"D:\Users\sjc\algorithm\paper\data\中国各城市空间权重矩阵(1).xlsx"):
     proveng_city_dist_mat_df = pd.read_excel(
         path,
         sheet_name="地理距离矩阵",
