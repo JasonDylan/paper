@@ -117,7 +117,7 @@ def get_selected_selected_server_city_n_id_list(server_lv, remain_servers_df):
 # 任务等级，业务员等级，数量
 # task_lv, server_lv, allocate_num
 # 分配指定等级对应的城市和业务员位置
-def allocate_servers_2_cities_for_a_decision_nearest_3_city(
+def allocate_servers_2_cities_for_a_decision_nearest_n_city(
     allocate_tuple, a_task_df, remain_servers_df, a_city_distance_df
 ):
     #todo 修改为从最近的3个城市选择，而不是得到全排列
@@ -236,6 +236,7 @@ def allocate_servers_2_cities_for_a_decision(
         a_city_distance_df=a_city_distance_df,
         allocate_else=allocate_num,
     )
+    # get_nearest_combinations()
     # else:
     #     min_cost_city_id_of_server_and_task_combination = [(task_lv, server_lv)]
     #     min_cost_sum  =
@@ -815,7 +816,7 @@ def get_a_state_revenue(
         city_num_2_name=city_num_2_name,
     )
     # S2 new server task 组成
-    key = (reduced_server_allocated, reduced_new_task.values.tolist())
+    key = (str(reduced_server_allocated), str(reduced_new_task.values.tolist()))
     # key = (
     #         str(reduced_server),
     #         str(reduced_server_allocated),
@@ -1489,7 +1490,7 @@ def generate_city(city_num: int = 26) -> (pd.DataFrame, dict):
         index=pd.MultiIndex.from_tuples(city_columns, names=column_names),
         columns=pd.MultiIndex.from_tuples(city_columns, names=column_names),
     )
-    city_df.to_excel(rf"D:\Users\sjc\algorithm\paper\city_{city_num}.xlsx")
+    city_df.to_excel(rf"C:\Users\dylan\Desktop\code\paper\city_{city_num}.xlsx")
     print(rf"D:\Users\sjc\algorithm\paper\city_{city_num}.xlsx")
     return city_df
 

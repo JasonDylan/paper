@@ -30,7 +30,6 @@ if __name__ == "__main__":
     a_city_distance_df, city_num_2_name = change_df_city_name_2_idx(
         cities=city_distance_df
     )
-
     global arriving_rate_df
 
     travel_fee_df = pd.read_excel(
@@ -66,6 +65,9 @@ if __name__ == "__main__":
     # 同时需要一个保存每个新产生的城市的矩阵
     reduce_V_iter = [[{} for _ in range(T)] for a_iter in range(iters)]
     reduce_V_actual_iter = [[{} for _ in range(T)] for a_iter in range(iters)]
+
+    
+    arriving_df_iter = [[0 for _ in range(T)] for a_iter in range(iters)]
     for it in range(iters):
         reduce_V, reduce_V_iter = cul_a_cycle(
             T=T,
