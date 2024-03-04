@@ -32,17 +32,17 @@ if __name__ == "__main__":
     )
 
     global arriving_rate_df
-    
+    path = '/home/junchengshen/code/paper/data/数据.xlsx'
     travel_fee_df = pd.read_excel(
-        "./data/数据.xlsx", sheet_name="travel fee", index_col=0
+        path, sheet_name="travel fee", index_col=0
     )
     arriving_rate_df = pd.read_excel(
-        "./data/数据.xlsx", sheet_name="arriving rate", index_col=0
+        path, sheet_name="arriving rate", index_col=0
     )
     initial_state_df = pd.read_excel(
-        "./data/数据.xlsx", sheet_name="initial state", index_col=0
+        path, sheet_name="initial state", index_col=0
     )
-    servers_df = pd.read_excel("./data/数据.xlsx", sheet_name="servers", index_col=0)
+    servers_df = pd.read_excel(path, sheet_name="servers", index_col=0)
     # 员工
     servers_df.columns = ["current_city", "lv", "day off"]
 

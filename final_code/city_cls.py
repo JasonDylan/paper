@@ -751,6 +751,7 @@ def get_a_state_revenue(
     # print(f"get_a_state_revenue {weekday=} {revenue=} {key=}")
     return revenue
 
+
 def allocate_reduce_df(final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df):
     # 传入分配情况/状态举证/到达矩阵
     # 返回新增任务后的状态矩阵/ 分配的矩阵
@@ -1284,7 +1285,7 @@ def change_df_city_name_2_idx(cities: pd.DataFrame) -> (pd.DataFrame, dict):
 
 
 # 2024年1月21日 20点42分
-def get_proveng_city_dist_mat_df(path="data\中国各城市空间权重矩阵(1).xlsx"):
+def get_proveng_city_dist_mat_df(path="/home/junchengshen/code/paper/data/中国各城市空间权重矩阵(1).xlsx"):
     proveng_city_dist_mat_df = pd.read_excel(
         path,
         sheet_name="地理距离矩阵",
