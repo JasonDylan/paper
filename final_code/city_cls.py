@@ -114,13 +114,14 @@ def get_selected_selected_server_city_n_id_list(server_lv, remain_servers_df):
 
     return selected_server_id_list, selected_server_city_id_list
 
+
 # 任务等级，业务员等级，数量
 # task_lv, server_lv, allocate_num
 # 分配指定等级对应的城市和业务员位置
 def allocate_servers_2_cities_for_a_decision_nearest_n_city(
     allocate_tuple, a_task_df, remain_servers_df, a_city_distance_df
 ):
-    #todo 修改为从最近的3个城市选择，而不是得到全排列
+    # todo 修改为从最近的3个城市选择，而不是得到全排列
     #
     task_lv, server_lv, allocate_num = allocate_tuple
     # 完成tasklv的任务可以获得的奖励
@@ -193,6 +194,8 @@ def allocate_servers_2_cities_for_a_decision_nearest_n_city(
         )
 
     return final_revenue, new_min_cost_city_id_of_server_and_task_combination_list
+
+
 # 任务等级，业务员等级，数量
 # task_lv, server_lv, allocate_num
 # 分配指定等级对应的城市和业务员位置
@@ -438,7 +441,7 @@ def get_allocation_for_a_day(
     reduce_V,
     reduce_V_iter,
     reduce_V_actual,
-    a_iter
+    a_iter,
 ) -> (float, list[tuple]):
     allocation_for_a_day = []
     # 做决策了这里就是要，挑一个最大的，同时要吧state的值压缩了之后做保存，当前state情况的最优决策
@@ -451,7 +454,9 @@ def get_allocation_for_a_day(
         a_servers_df = remain_servers_df
         final_allocation_for_a_day = combination
 
-        new_task_df, new_servers_df, allocate_task_df = allocate_reduce_df(final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df)
+        new_task_df, new_servers_df, allocate_task_df = allocate_reduce_df(
+            final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df
+        )
         reduceV_revenue = get_a_state_revenue(
             a_servers_df=a_servers_df,
             new_servers_df=new_servers_df,
@@ -466,7 +471,7 @@ def get_allocation_for_a_day(
             city_num_2_name=city_num_2_name,
             a_iter=a_iter,
         )
-        if reduceV_revenue!= 0:
+        if reduceV_revenue != 0:
             print(f"{reduceV_revenue=}")
 
         if max_revenue < revenue + reduceV_revenue:
@@ -502,7 +507,7 @@ def allocate_servers_2_citys_MDP(
     reduce_V,
     reduce_V_iter,
     reduce_V_actual,
-    a_iter
+    a_iter,
 ):
     # 根据 lv 来做分组, join 分组后的结果应该
     join_idx_2_task_lv_server_lv_num = generate_idx_2_joins(
@@ -559,7 +564,7 @@ def allocate_servers_2_citys_MDP(
         reduce_V=reduce_V,
         reduce_V_iter=reduce_V_iter,
         reduce_V_actual=reduce_V_actual,
-        a_iter=a_iter
+        a_iter=a_iter,
     )
     return final_revenue, final_allocation_for_a_day
 
@@ -734,7 +739,7 @@ def save_a_state_revenue(
     weekday,
     proveng_dict,
     city_num_2_name,
-    a_iter
+    a_iter,
 ):
     reduced_server = reduce_server_df(
         a_servers_df=a_servers_df,
@@ -764,15 +769,15 @@ def save_a_state_revenue(
     # S2 new server task 组成
     # key = (reduced_server, reduced_task.values.tolist())
     key = (
-            str(reduced_server),
-            str(reduced_server_allocated),
-            str(reduced_task.values.tolist()),
-            str(reduced_allocate_task.values.tolist()),
-        )
+        str(reduced_server),
+        str(reduced_server_allocated),
+        str(reduced_task.values.tolist()),
+        str(reduced_allocate_task.values.tolist()),
+    )
     reduce_V_iter[a_iter][weekday - 1].update({key: final_revenue})
     reduce_V[weekday - 1].update({key: final_revenue})
 
-    return reduce_V,reduce_V_iter
+    return reduce_V, reduce_V_iter
 
 
 def get_a_state_revenue(
@@ -787,7 +792,7 @@ def get_a_state_revenue(
     weekday,
     proveng_dict,
     city_num_2_name,
-    a_iter
+    a_iter,
 ):
     reduced_server = reduce_server_df(
         a_servers_df=a_servers_df,
@@ -809,7 +814,7 @@ def get_a_state_revenue(
         proveng_dict=proveng_dict,
         city_num_2_name=city_num_2_name,
     )
-    
+
     reduced_new_task = reduce_task_df(
         a_task_df=new_task_df,
         proveng_dict=proveng_dict,
@@ -823,15 +828,17 @@ def get_a_state_revenue(
     #         str(reduced_task.values.tolist()),
     #         str(reduced_allocate_task.values.tolist()),
     #     )
-    if key in reduce_V_actual[weekday-1].keys():
-        revenue = reduce_V_actual[weekday-1][key]
+    if key in reduce_V_actual[weekday - 1].keys():
+        revenue = reduce_V_actual[weekday - 1][key]
     else:
         revenue = 0
     # print(f"get_a_state_revenue {weekday=} {revenue=} {key=}")
     return revenue
 
 
-def allocate_reduce_df(final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df):
+def allocate_reduce_df(
+    final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df
+):
     # 传入分配情况/状态举证/到达矩阵
     # 返回新增任务后的状态矩阵/ 分配的矩阵
     # todo 这里应该对任务新增做个保存，为了后续的其他算法的计算
@@ -856,6 +863,7 @@ def allocate_reduce_df(final_allocation_for_a_day, a_task_df, arriving_rate_df, 
     new_servers_df = update_server_cities(a_servers_df, final_allocation_for_a_day)
     return new_task_df, new_servers_df, allocate_task_df
 
+
 def save_reduct_v(
     a_task_df,
     a_servers_df,
@@ -867,11 +875,13 @@ def save_reduct_v(
     final_revenue,
     reduce_V,
     reduce_V_iter,
-    a_iter
+    a_iter,
 ):
-    new_task_df, new_servers_df, allocate_task_df = allocate_reduce_df(final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df)
+    new_task_df, new_servers_df, allocate_task_df = allocate_reduce_df(
+        final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df
+    )
 
-    reduce_V,reduce_V_iter = save_a_state_revenue(
+    reduce_V, reduce_V_iter = save_a_state_revenue(
         a_servers_df=a_servers_df,
         new_servers_df=new_servers_df,
         new_task_df=new_task_df,
@@ -883,10 +893,10 @@ def save_reduct_v(
         weekday=weekday,
         proveng_dict=proveng_dict,
         city_num_2_name=city_num_2_name,
-        a_iter=a_iter
+        a_iter=a_iter,
     )
 
-    return reduce_V, reduce_V_iter,  new_task_df, new_servers_df, allocate_task_df
+    return reduce_V, reduce_V_iter, new_task_df, new_servers_df, allocate_task_df
 
 
 def cul_a_cycle(
@@ -900,7 +910,7 @@ def cul_a_cycle(
     reduce_V,
     reduce_V_iter,
     reduce_V_actual,
-    a_iter 
+    a_iter,
 ):
     # 每次迭代，应该决策前的状态，最优决策，缩减的决策和状态，以及收益， 之后应当可以通过缩减的决策和状态获取收益，这个得做一个保存
     # 我们先假设组内直接求最优，组间组合的时候做一个缩减后的状态收益决策。
@@ -918,28 +928,30 @@ def cul_a_cycle(
             remain_servers_df=remain_servers_df,
             a_task_df=a_task_df,
             a_city_distance_df=a_city_distance_df,
-            arriving_rate_df =arriving_rate_df,
-            weekday=weekday,
-            proveng_dict=proveng_dict,
-            city_num_2_name =city_num_2_name,
-            reduce_V= reduce_V,
-            reduce_V_iter =reduce_V_iter,
-            reduce_V_actual =reduce_V_actual,
-            a_iter = a_iter
-        )
-
-        reduce_V, reduce_V_iter, new_task_df, new_servers_df, allocate_task_df = save_reduct_v(
-            a_task_df=a_task_df,
-            a_servers_df=a_servers_df,
-            final_allocation_for_a_day=final_allocation_for_a_day,
             arriving_rate_df=arriving_rate_df,
             weekday=weekday,
             proveng_dict=proveng_dict,
             city_num_2_name=city_num_2_name,
-            final_revenue=final_revenue,
             reduce_V=reduce_V,
             reduce_V_iter=reduce_V_iter,
-            a_iter=a_iter
+            reduce_V_actual=reduce_V_actual,
+            a_iter=a_iter,
+        )
+
+        reduce_V, reduce_V_iter, new_task_df, new_servers_df, allocate_task_df = (
+            save_reduct_v(
+                a_task_df=a_task_df,
+                a_servers_df=a_servers_df,
+                final_allocation_for_a_day=final_allocation_for_a_day,
+                arriving_rate_df=arriving_rate_df,
+                weekday=weekday,
+                proveng_dict=proveng_dict,
+                city_num_2_name=city_num_2_name,
+                final_revenue=final_revenue,
+                reduce_V=reduce_V,
+                reduce_V_iter=reduce_V_iter,
+                a_iter=a_iter,
+            )
         )
 
         a_task_df = new_task_df
@@ -1330,8 +1342,12 @@ def generate_idx_2_joins(state_df, remain_servers_df):
     # 组别内allocate
     join_idx_2_task_lv_server_lv_num = {}
     for join_idx, join in enumerate(joins):
-        level_indices = [levels.index(lv) for lv in join]  # 获取join中每个level对应的索引
-        a_tasks = [tasks[index] for index in level_indices]  # 获取与join中每个level相对应的任务数量
+        level_indices = [
+            levels.index(lv) for lv in join
+        ]  # 获取join中每个level对应的索引
+        a_tasks = [
+            tasks[index] for index in level_indices
+        ]  # 获取与join中每个level相对应的任务数量
         a_servers = [
             servers[index] for index in level_indices
         ]  # 获取与join中每个level相对应的服务器数量
@@ -1364,7 +1380,9 @@ def change_df_city_name_2_idx(cities: pd.DataFrame) -> (pd.DataFrame, dict):
 
 
 # 2024年1月21日 20点42分
-def get_proveng_city_dist_mat_df(path=r"D:\Users\sjc\algorithm\paper\data\中国各城市空间权重矩阵(1).xlsx"):
+def get_proveng_city_dist_mat_df(
+    path=r"D:\Users\sjc\algorithm\paper\data\中国各城市空间权重矩阵(1).xlsx",
+):
     proveng_city_dist_mat_df = pd.read_excel(
         path,
         sheet_name="地理距离矩阵",
@@ -1424,7 +1442,9 @@ def get_select_city_df(
 ):
     # 挑选出安徽、江苏、浙江和上海的省份及对应的矩阵数据
     select_proveng = ["Anhui", "Jiangsu", "Zhejiang", "Shanghai"]  # TODO 可能要换省份
-    provengs = proveng_city_dist_mat_df.iloc[:, proveng_idx].values  # 表格第一列为城市名称
+    provengs = proveng_city_dist_mat_df.iloc[
+        :, proveng_idx
+    ].values  # 表格第一列为城市名称
     select_proveng_idxs = [
         i for i, prov in enumerate(provengs) if prov in select_proveng
     ]  # xls里选取指定的省份的idx，是字母
