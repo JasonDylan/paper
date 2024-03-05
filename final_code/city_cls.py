@@ -35,7 +35,7 @@ def get_combinations(
     current_combination,
     min_cost_sum=float("inf"),
     allocate_else=0,
-    min_cost_city_id_of_server_and_task_combination_list=[],
+    server_and_task_combination_list=[],
     need_comb_num=None,
     a_city_distance_df=None,
 ):
@@ -51,9 +51,9 @@ def get_combinations(
         )
         if current_sum < min_cost_sum:
             min_cost_sum = current_sum
-            min_cost_city_id_of_server_and_task_combination_list = [current_combination]
+            server_and_task_combination_list = [current_combination]
         # elif current_sum == min_cost_sum:
-        #     min_cost_city_id_of_server_and_task_combination_list.append(
+        #     server_and_task_combination_list.append(
         #         current_combination
         #     )
         if need_comb_num is not None:
@@ -74,26 +74,26 @@ def get_combinations(
             min_cost_city_id_of_server_and_task_combination = (
                 new_min_cost_city_id_of_server_and_task_combination
             )
-        return min_cost_sum, min_cost_city_id_of_server_and_task_combination_list
+        return min_cost_sum, server_and_task_combination_list
 
     for i, city in enumerate(task_city_id_list):
         remaining_cities = task_city_id_list[:i] + task_city_id_list[i + 1 :]
         new_current_combination = current_combination + [(server_city_id_list[0], city)]
         (
             min_cost_sum,
-            min_cost_city_id_of_server_and_task_combination_list,
+            server_and_task_combination_list,
         ) = get_combinations(
             server_city_id_list[1:],
             remaining_cities,
             new_current_combination,
             min_cost_sum,
             allocate_else - 1,
-            min_cost_city_id_of_server_and_task_combination_list,
+            server_and_task_combination_list,
             need_comb_num,
             a_city_distance_df,
         )
 
-    return min_cost_sum, min_cost_city_id_of_server_and_task_combination_list
+    return min_cost_sum, server_and_task_combination_list
 
 
 def get_revenue_by_task_and_num(task_lv, num):
@@ -136,6 +136,17 @@ def get_selected_selected_server_city_n_id_list(server_lv, remain_servers_df):
 
     return selected_server_id_list, selected_server_city_id_list
 
+def combine_cities(cities, path=[], all_paths=[]):
+    if not cities:
+        all_paths.append(path)
+        return all_paths
+
+    for city_id in cities[0]:
+        if city_id not in path:
+            # 继续递归，选择下一个城市ID
+            combine_cities(cities[1:], path + [city_id], all_paths)
+
+    return all_paths
 
 # 任务等级，业务员等级，数量
 # task_lv, server_lv, allocate_num
@@ -170,47 +181,42 @@ def allocate_servers_2_cities_for_a_decision_nearest_n_city(
     # 获取业务员所在城市的列表
     # 生成所有城市-业务员位置的排列组合
     # 获取 满足task_lv要求的城市 和 满足 server_lv 的server 条件下的所有分配
-    (
-        min_cost_sum,
-        min_cost_city_id_of_server_and_task_combination_list,
-    ) = get_combinations(
-        selected_server_city_id_list,
-        selected_task_city_id_list_repeated,
-        current_combination=[],
-        a_city_distance_df=a_city_distance_df,
-        allocate_else=allocate_num,
-    )
+    # (
+    #     min_cost_sum,
+    #     server_and_task_combination_list,
+    # ) = get_combinations(
+    #     selected_server_city_id_list,
+    #     selected_task_city_id_list_repeated,
+    #     current_combination=[],
+    #     a_city_distance_df=a_city_distance_df,
+    #     allocate_else=allocate_num,
+    # )
     # 初始化 CityDistanceManager
     manager = CityDistanceManager(a_city_distance_df, )
 
 
     assignment_combinations = []
-    for server_city_id in selected_server_city_id_list:
-        nearest_cities = manager.get_nearest_cities(server_city_id, selected_task_city_id_list_repeated, n=3)
-        combinations = list(itertools.product([server_city_id], nearest_cities))
-        assignment_combinations.extend(combinations)
-    # todo 修改revenue 返回 只有一个的问题
-    # todo 查看assignment_combinations，是否都放入list
-
-    # else:
-    #     min_cost_city_id_of_server_and_task_combination = [(task_lv, server_lv)]
-    #     min_cost_sum  =
-    # print("min Combination:", min_cost_city_id_of_server_and_task_combination) # cost最小的组合
-    # print("min Sum:", min_cost_sum)
+    nearest_cities_2_task_city_id_list = []
+    # nearest_cities_2_task_city_id_list:[[13, 6, 20], [16, 6, 13], [16, 6, 14], [16, 6, 14]]
+    nearest_cities_2_task_city_list = [manager.get_nearest_cities(server_city_id, selected_task_city_id_list_repeated, n=3) for server_city_id in selected_server_city_id_list]
+    nearest_cities_2_task_city_id_list = [[id for id, dist in nearest_cities ] for nearest_cities in nearest_cities_2_task_city_list]
+    
+    all_combinations = combine_cities(nearest_cities_2_task_city_id_list)
+    server_and_task_combination_list = [ (server, city) for cities in all_combinations for server,city in zip(selected_server_city_id_list, nearest_cities_2_task_city_id_list)]
     final_revenue = revenue - min_cost_sum
-
+    
     # 分配后应该更新server 位置 为城市
     # columns = ['业务员编号id', '业务员城市', '分配去的城市编号', '城市等级', '业务员等级']
-
+    server_and_task_combination_list = assignment_combinations
     # 存到内存
-    new_min_cost_city_id_of_server_and_task_combination_list = []
+    new_server_and_task_combination_list = []
     # if min_cost_city_id_of_server_and_task_combination:
     #     print(min_cost_city_id_of_server_and_task_combination)
     # else:
     #     print(f"{min_cost_city_id_of_server_and_task_combination=}")
     for (
         min_cost_city_id_of_server_and_task_combination
-    ) in min_cost_city_id_of_server_and_task_combination_list:
+    ) in server_and_task_combination_list:
         new_min_cost_city_id_of_server_and_task_combination = []
         for server_city_id, city_id in min_cost_city_id_of_server_and_task_combination:
             new_min_cost_city_id_of_server_and_task_combination.append(
@@ -223,11 +229,11 @@ def allocate_servers_2_cities_for_a_decision_nearest_n_city(
                 ]
             )
             # columns = ['业务员编号id', '业务员城市', '分配去的城市编号', '城市等级', '业务员等级']
-        new_min_cost_city_id_of_server_and_task_combination_list.append(
+        new_server_and_task_combination_list.append(
             new_min_cost_city_id_of_server_and_task_combination
         )
 
-    return final_revenue, new_min_cost_city_id_of_server_and_task_combination_list
+    return final_revenue, new_server_and_task_combination_list
 
 
 # 任务等级，业务员等级，数量
@@ -265,7 +271,7 @@ def allocate_servers_2_cities_for_a_decision(
     # 获取 满足task_lv要求的城市 和 满足 server_lv 的server 条件下的所有分配，
     (
         min_cost_sum,
-        min_cost_city_id_of_server_and_task_combination_list,
+        server_and_task_combination_list,
     ) = get_combinations(
         selected_server_city_id_list,
         selected_task_city_id_list_repeated,
@@ -285,14 +291,14 @@ def allocate_servers_2_cities_for_a_decision(
     # columns = ['业务员编号id', '业务员城市', '分配去的城市编号', '城市等级', '业务员等级']
 
     # 存到内存
-    new_min_cost_city_id_of_server_and_task_combination_list = []
+    new_server_and_task_combination_list = []
     # if min_cost_city_id_of_server_and_task_combination:
     #     print(min_cost_city_id_of_server_and_task_combination)
     # else:
     #     print(f"{min_cost_city_id_of_server_and_task_combination=}")
     for (
         min_cost_city_id_of_server_and_task_combination
-    ) in min_cost_city_id_of_server_and_task_combination_list:
+    ) in server_and_task_combination_list:
         new_min_cost_city_id_of_server_and_task_combination = []
         for server_city_id, city_id in min_cost_city_id_of_server_and_task_combination:
             new_min_cost_city_id_of_server_and_task_combination.append(
@@ -305,11 +311,11 @@ def allocate_servers_2_cities_for_a_decision(
                 ]
             )
             # columns = ['业务员编号id', '业务员城市', '分配去的城市编号', '城市等级', '业务员等级']
-        new_min_cost_city_id_of_server_and_task_combination_list.append(
+        new_server_and_task_combination_list.append(
             new_min_cost_city_id_of_server_and_task_combination
         )
 
-    return final_revenue, new_min_cost_city_id_of_server_and_task_combination_list
+    return final_revenue, new_server_and_task_combination_list
 
 
 def allocate_servers_2_cities(
@@ -328,7 +334,7 @@ def allocate_servers_2_cities(
     a_task_df = initial_task_df.copy()
 
     allocate_servers_2_cities_for_a_decision_list = [
-        allocate_servers_2_cities_for_a_decision(
+        allocate_servers_2_cities_for_a_decision_nearest_n_city(
             a_allocate,
             # (4, 2, 1),
             a_task_df,
@@ -356,7 +362,7 @@ def allocate_servers_2_cities(
     #     (
     #         a_revenue_for_a_allocate,
     #         combination_for_a_allocate,
-    #     ) = allocate_servers_2_cities_for_a_decision(
+    #     ) = allocate_servers_2_cities_for_a_decision_nearest_n_city(
     #         a_allocate, a_task_df, remain_servers_df, a_city_distance_df
     #     )
     #     print(a_allocate, a_revenue_for_a_allocate, combination_for_a_allocate)
@@ -1415,7 +1421,7 @@ def change_df_city_name_2_idx(cities: pd.DataFrame) -> (pd.DataFrame, dict):
 
 # 2024年1月21日 20点42分
 def get_proveng_city_dist_mat_df(
-    path=r"C:\Users\dylan\Desktop\code\paper\data\中国各城市空间权重矩阵(1).xlsx",
+    path=r"D:\Users\sjc\algorithm\paper\data\中国各城市空间权重矩阵(1).xlsx",
 ):
     proveng_city_dist_mat_df = pd.read_excel(
         path,
@@ -1544,7 +1550,7 @@ def generate_city(city_num: int = 26) -> (pd.DataFrame, dict):
         index=pd.MultiIndex.from_tuples(city_columns, names=column_names),
         columns=pd.MultiIndex.from_tuples(city_columns, names=column_names),
     )
-    city_df.to_excel(rf"C:\Users\dylan\Desktop\code\paper\city_{city_num}.xlsx")
+    city_df.to_excel(rf"D:\Users\sjc\algorithm\paper\city_{city_num}.xlsx")
     print(rf"D:\Users\sjc\algorithm\paper\city_{city_num}.xlsx")
     return city_df
 

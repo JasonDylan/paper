@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # 全局设定种子，保证，每次随机结果一致
     np.random.seed(42)
     # 生成城市规模/一个省
-    city_num = 5
+    city_num = 26
     # 生成 26个城市
     city_distance_df = generate_city(city_num=city_num)
     city_to_proveng = get_city_2_proveng_dict()

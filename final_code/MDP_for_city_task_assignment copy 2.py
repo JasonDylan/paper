@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # 全局设定种子，保证，每次随机结果一致
     np.random.seed(42)
     # 生成城市规模/一个省
-    city_num = 3
+    city_num = 26
     # 生成 26个城市
     city_distance_df = generate_city(city_num=city_num)
     city_to_proveng = get_city_2_proveng_dict()
@@ -32,17 +32,17 @@ if __name__ == "__main__":
     )
 
     global arriving_rate_df
-    path = r'D:\Users\sjc\algorithm\paper\data\数据.xlsx'
+    
     travel_fee_df = pd.read_excel(
-        path, sheet_name="travel fee", index_col=0
+        "./data/数据.xlsx", sheet_name="travel fee", index_col=0
     )
     arriving_rate_df = pd.read_excel(
-        path, sheet_name="arriving rate", index_col=0
+        "./data/数据.xlsx", sheet_name="arriving rate", index_col=0
     )
     initial_state_df = pd.read_excel(
-        path, sheet_name="initial state", index_col=0
+        "./data/数据.xlsx", sheet_name="initial state", index_col=0
     )
-    servers_df = pd.read_excel(path, sheet_name="servers", index_col=0)
+    servers_df = pd.read_excel("./data/数据.xlsx", sheet_name="servers", index_col=0)
     # 员工
     servers_df.columns = ["current_city", "lv", "day off"]
 
