@@ -16,25 +16,22 @@ if __name__ == "__main__":
     revenue_for_lv = [3500, 3000, 2500, 2000, 1500]
     # 全局设定种子，保证，每次随机结果一致
     np.random.seed(42)
-    # 生成城市规模/一个省
+    # 生成城市规模/一个省 生成 26个城市 todo 修改此处可以控制生成的城市数量
     city_num = 26
-    # 生成 26个城市
     city_distance_df = generate_city(city_num=city_num)
     city_to_proveng = get_city_2_proveng_dict()
 
     proveng = city_distance_df.index.get_level_values(
         "proveng"
     ).unique()  # 获得所有province的name
-    proveng_dict = {proveng[i]: i + 1 for i in range(len(proveng))}
+    proveng_dict = {proveng[i]: i + 1 for i in range(len(proveng))} # 省份转id
     city_names = city_distance_df.columns
     a_city_distance_df, city_num_2_name = change_df_city_name_2_idx(
         cities=city_distance_df
     )
     global arriving_rate_df
 
-    travel_fee_df = pd.read_excel(
-        "./data/数据.xlsx", sheet_name="travel fee", index_col=0
-    )
+    # 读取excel的城市/员工状态/arriving_rate
     arriving_rate_df = pd.read_excel(
         "./data/数据.xlsx", sheet_name="arriving rate", index_col=0
     )

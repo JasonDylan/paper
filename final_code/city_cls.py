@@ -952,9 +952,11 @@ def cul_a_cycle(
     reduce_V_actual,
     a_iter,
 ):
+    '''对一个周期内求解状态和周期的收益'''
     # 每次迭代，应该决策前的状态，最优决策，缩减的决策和状态，以及收益， 之后应当可以通过缩减的决策和状态获取收益，这个得做一个保存
     # 我们先假设组内直接求最优，组间组合的时候做一个缩减后的状态收益决策。
-    for weekday in range(1, T + 1):
+    for time in range(1, T + 1):
+        weekday = time % 7
         # ------根据 lv 来做分组，进行组内分配
         print(
             f"-----------------------------------------------weekday:{weekday}------------------------------------------"
@@ -1409,7 +1411,7 @@ def generate_idx_2_joins(state_df, remain_servers_df):
 
 # 2024年1月21日 21点42分
 def change_df_city_name_2_idx(cities: pd.DataFrame) -> (pd.DataFrame, dict):
-    """改名字为idx，同时返回新df和idx2name"""
+    """改名字为idx，同时返回新df和idx2name， 例如修改zhejiang 转为1 这种数字，用于后续爬代码"""
     city_names = cities.columns
     city_num = len(city_names)
     city_name_nums = list(range(1, city_num + 1))
@@ -1431,6 +1433,7 @@ def get_proveng_city_dist_mat_df(
 
 
 def get_city_2_proveng_dict(proveng_city_dist_mat_df=None):
+    '''获取城市转省份字典'''
     if proveng_city_dist_mat_df is None:
         proveng_city_dist_mat_df = get_proveng_city_dist_mat_df()
     city_to_proveng_dict = (
