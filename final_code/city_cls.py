@@ -9,22 +9,26 @@ import random
 
 
 class CityDistanceManager:
+    # 本类是城市距离管理类，用于获取将城市对应的其他城市距离排序
     def __init__(self, city_id_distance_df):
         self.city_id_distance_df = city_id_distance_df
         self.city_ids = city_id_distance_df.columns.tolist()
         self.city_id_2_sorted_cities = [self.get_sorted_cities(city_id=city_id) for city_id in self.city_ids] 
 
     def get_sorted_cities(self, city_id):
+        # 本函数用于获取一个城市对于其他城市距离的排序
         distance = self.city_id_distance_df[city_id]
         sorted_indices = np.argsort(distance)
         sorted_cities = [(distance.index[idx], distance.iloc[idx]) for idx in sorted_indices]
         return sorted_cities
 
     def get_nearest_cities(self, city_id, n=3):
+        # 本函数用于获取最近的3个城市
         nearest_cities = self.city_id_2_sorted_cities[city_id][1:n+1]
         return nearest_cities
     
-    def get_nearest_cities(self, city_id, task_city_ids, n=3):
+    def get_nearest_cities_for_select_cities(self, city_id, task_city_ids, n=3):
+        # 本函数用于获取指定的城市中，最近的几个城市
         sorted_cities = self.city_id_2_sorted_cities[city_id]
         nearest_cities = [city for city in sorted_cities if city[0] in task_city_ids][:n]
         return nearest_cities
@@ -39,6 +43,7 @@ def get_combinations(
     need_comb_num=None,
     a_city_distance_df=None,
 ):
+    # 本函数用于递归获取，对于server_list和city_list的所有业务员和城市的匹配方式，复杂度太高，已经停止使用
     if (
         len(server_city_id_list) == 0
         or len(task_city_id_list) == 0
@@ -97,11 +102,13 @@ def get_combinations(
 
 
 def get_revenue_by_task_and_num(task_lv, num):
+    # 本函数用于根据任务数量和等级，计算收益
     revenue_for_lv = [3500, 3000, 2500, 2000, 1500]
     return revenue_for_lv[task_lv - 1] * num
 
 
 def get_selected_task_lv_city_id_list(task_lv, a_task_df):
+    # 本函数用于获取指定level为task_lv的task的城市id
     # remain_servers_df
     # 对于一个decisions 内的单个allocation，进行分配
     # 输入为指定task_lv的城市位置，有指定server_lv对应的server位置, 和分配数量
@@ -124,6 +131,7 @@ def get_selected_task_lv_city_id_list(task_lv, a_task_df):
 
 
 def get_selected_selected_server_city_n_id_list(server_lv, remain_servers_df):
+    # 本函数用于获取指定level为server_lv的server的城市id_list
     # server_lv = 1
     selected_server_city_df = remain_servers_df[remain_servers_df["lv"] == server_lv][
         "current_city"
@@ -137,6 +145,7 @@ def get_selected_selected_server_city_n_id_list(server_lv, remain_servers_df):
     return selected_server_id_list, selected_server_city_id_list
 
 def combine_cities(cities, path=[], all_paths=[]):
+    # 获取
     if not cities:
         all_paths.append(path)
         return all_paths
@@ -154,8 +163,10 @@ def combine_cities(cities, path=[], all_paths=[]):
 def allocate_servers_2_cities_for_a_decision_nearest_n_city(
     allocate_tuple, a_task_df, remain_servers_df, a_city_distance_df
 ):
-    # todo 修改为从最近的3个城市选择，而不是得到全排列
-    #
+    
+    # 本函数用于将一个组合的分配方式，获取最近的3个城市的方式，来降低复杂度，
+    # 并组合成 [业务员id，业务员城市id，分配去的城市id，分配去的城市的任务的等级，业务员任务等级]
+
     task_lv, server_lv, allocate_num = allocate_tuple
     # 完成tasklv的任务可以获得的奖励
     revenue = get_revenue_by_task_and_num(task_lv, allocate_num)
@@ -178,23 +189,8 @@ def allocate_servers_2_cities_for_a_decision_nearest_n_city(
         for city, idx in zip(selected_server_city_id_list, selected_server_id_list)
     }  # 城市id转业务员id ， 用于生成分配策略
 
-    # 获取业务员所在城市的列表
-    # 生成所有城市-业务员位置的排列组合
-    # 获取 满足task_lv要求的城市 和 满足 server_lv 的server 条件下的所有分配
-    # (
-    #     min_cost_sum,
-    #     server_and_task_combination_list,
-    # ) = get_combinations(
-    #     selected_server_city_id_list,
-    #     selected_task_city_id_list_repeated,
-    #     current_combination=[],
-    #     a_city_distance_df=a_city_distance_df,
-    #     allocate_else=allocate_num,
-    # )
     # 初始化 CityDistanceManager
     manager = CityDistanceManager(a_city_distance_df, )
-
-
     assignment_combinations = []
     nearest_cities_2_task_city_id_list = []
     # nearest_cities_2_task_city_id_list:[[13, 6, 20], [16, 6, 13], [16, 6, 14], [16, 6, 14]]
@@ -210,10 +206,6 @@ def allocate_servers_2_cities_for_a_decision_nearest_n_city(
     server_and_task_combination_list = assignment_combinations
     # 存到内存
     new_server_and_task_combination_list = []
-    # if min_cost_city_id_of_server_and_task_combination:
-    #     print(min_cost_city_id_of_server_and_task_combination)
-    # else:
-    #     print(f"{min_cost_city_id_of_server_and_task_combination=}")
     for (
         min_cost_city_id_of_server_and_task_combination
     ) in server_and_task_combination_list:
@@ -233,8 +225,8 @@ def allocate_servers_2_cities_for_a_decision_nearest_n_city(
             new_min_cost_city_id_of_server_and_task_combination
         )
 
-    return final_revenue, new_server_and_task_combination_list
-
+    # todo ，现在修改的后一个list 是很多的组合，revenue不是对应一个
+    return final_revenue, new_server_and_task_combination_list 
 
 # 任务等级，业务员等级，数量
 # task_lv, server_lv, allocate_num
@@ -242,7 +234,10 @@ def allocate_servers_2_cities_for_a_decision_nearest_n_city(
 def allocate_servers_2_cities_for_a_decision(
     allocate_tuple, a_task_df, remain_servers_df, a_city_distance_df
 ):
-    #
+    # 本函数用于将一个组合的分配方式，递归方式获取所有分配，
+    # 并组合成 [业务员id，业务员城市id，分配去的城市id，分配去的城市的任务的等级，业务员任务等级]
+    # 已废弃
+
     task_lv, server_lv, allocate_num = allocate_tuple
     # if allocate_num > 1:
     # 完成tasklv的任务可以获得的奖励
@@ -324,7 +319,7 @@ def allocate_servers_2_cities(
     remain_servers_df,
     a_city_distance_df,
 ) -> dict:
-    # 根据decisions集合分组情况/城市状态df/用户状态df，分配所有情况
+    # 本函数用于根据decisions集合分组情况/城市状态df/用户状态df，分配所有情况
 
     revenue_and_combination_for_decision = {}
 
@@ -378,6 +373,7 @@ def allocate_servers_2_cities(
 
 
 def get_all_allocations_for_decisions(allocations_for_decisions: dict) -> list[dict]:
+    # 有了每个组合内的分配，开始合并不同组之间的决策，并reduce 并获取V历史记录的对应的收益。todo 可能需要修改计算revenue的
     num_combinations = 1
     for key, value in allocations_for_decisions.items():
         num_combinations *= len(value)
@@ -483,6 +479,7 @@ def get_allocation_for_a_day(
     reduce_V_actual,
     a_iter,
 ) -> (float, list[tuple]):
+    # 本函数用于获取最好的分配
     allocation_for_a_day = []
     # 做决策了这里就是要，挑一个最大的，同时要吧state的值压缩了之后做保存，当前state情况的最优决策
     max_revenue = 0
@@ -549,7 +546,9 @@ def allocate_servers_2_citys_MDP(
     reduce_V_actual,
     a_iter,
 ):
-    # 根据 lv 来做分组, join 分组后的结果应该
+    '''将业务员根据算法分配到城市里'''
+
+    # 根据 lv 来做分组
     join_idx_2_task_lv_server_lv_num = generate_idx_2_joins(
         a_task_df, remain_servers_df
     )
@@ -587,7 +586,7 @@ def allocate_servers_2_citys_MDP(
             {join_idx: revenue_and_combination_list_for_a_join}
         )
 
-    # 有了不同的，开始合并决策，并reduce 并获取V历史记录的对应的收益。
+    # 有了每个组合内的分配，开始合并不同组之间的决策，并reduce 并获取V历史记录的对应的收益。todo 可能需要修改计算revenue的
     final_revenue_n_combination_list = get_all_allocations_for_decisions(
         join_idx_2_revenue_and_combination_list_dict
     )
@@ -781,6 +780,7 @@ def save_a_state_revenue(
     city_num_2_name,
     a_iter,
 ):
+    # 对状态将城市缩减为省份之后做个保存
     reduced_server = reduce_server_df(
         a_servers_df=a_servers_df,
         proveng_dict=proveng_dict,
@@ -807,13 +807,15 @@ def save_a_state_revenue(
         city_num_2_name=city_num_2_name,
     )
     # S2 new server task 组成
-    # key = (reduced_server, reduced_task.values.tolist())
-    key = (
-        str(reduced_server),
-        str(reduced_server_allocated),
-        str(reduced_task.values.tolist()),
-        str(reduced_allocate_task.values.tolist()),
-    )
+    # key = (reduced_server, reduced_task.values.tolist()) # 修改
+    
+    key = (str(reduced_server_allocated), str(reduced_new_task.values.tolist()))
+    # key = (
+    #     str(reduced_server),
+    #     str(reduced_server_allocated),
+    #     str(reduced_task.values.tolist()),
+    #     str(reduced_allocate_task.values.tolist()),
+    # )
     reduce_V_iter[a_iter][weekday - 1].update({key: final_revenue})
     reduce_V[weekday - 1].update({key: final_revenue})
 
@@ -834,6 +836,7 @@ def get_a_state_revenue(
     city_num_2_name,
     a_iter,
 ):
+    # 获取状态
     reduced_server = reduce_server_df(
         a_servers_df=a_servers_df,
         proveng_dict=proveng_dict,
@@ -879,6 +882,7 @@ def get_a_state_revenue(
 def allocate_reduce_df(
     final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df
 ):
+    # 本函数用于对于确定的分配,获取状态用于后续的计算
     # 传入分配情况/状态举证/到达矩阵
     # 返回新增任务后的状态矩阵/ 分配的矩阵
     # todo 这里应该对任务新增做个保存，为了后续的其他算法的计算
@@ -917,6 +921,7 @@ def save_reduct_v(
     reduce_V_iter,
     a_iter,
 ):
+    # 本函数用于保存收益矩阵
     new_task_df, new_servers_df, allocate_task_df = allocate_reduce_df(
         final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df
     )
@@ -952,7 +957,7 @@ def cul_a_cycle(
     reduce_V_actual,
     a_iter,
 ):
-    '''对一个周期内求解状态和周期的收益'''
+    '''本函数用于对一个周期内求解状态和周期的收益'''
     # 每次迭代，应该决策前的状态，最优决策，缩减的决策和状态，以及收益， 之后应当可以通过缩减的决策和状态获取收益，这个得做一个保存
     # 我们先假设组内直接求最优，组间组合的时候做一个缩减后的状态收益决策。
     for time in range(1, T + 1):
@@ -1012,6 +1017,7 @@ def cul_a_cycle_rnd(
     city_num_2_name,
     reduce_V,
 ):
+    # 本函数用于计算随机分配的策略
     # 每次迭代，应该决策前的状态，最优决策，缩减的决策和状态，以及收益， 之后应当可以通过缩减的决策和状态获取收益，这个得做一个保存
     # 我们先假设组内直接求最优，组间组合的时候做一个缩减后的状态收益决策。
     for weekday in range(1, T + 1):
@@ -1089,6 +1095,7 @@ def cul_a_cycle_nearest(
     city_num_2_name,
     reduce_V,
 ):
+    # 本函数用于决策每次获取最近距离的策略
     # 每次迭代，应该决策前的状态，最优决策，缩减的决策和状态，以及收益， 之后应当可以通过缩减的决策和状态获取收益，这个得做一个保存
     # 我们先假设组内直接求最优，组间组合的时候做一个缩减后的状态收益决策。
     for weekday in range(1, T + 1):
@@ -1169,6 +1176,7 @@ def cul_a_cycle_single_stage(
     city_num_2_name,
     reduce_V,
 ):
+    # 本函数用于决策单阶段的策略
     # 每次迭代，应该决策前的状态，最优决策，缩减的决策和状态，以及收益， 之后应当可以通过缩减的决策和状态获取收益，这个得做一个保存
     # 我们先假设组内直接求最优，组间组合的时候做一个缩减后的状态收益决策。
     for weekday in range(1, T + 1):
@@ -1359,7 +1367,7 @@ def remove_duplicates(list_of_lists_of_tuples):
 
 
 def generate_idx_2_joins(state_df, remain_servers_df):
-    """本函数用于,"""
+    """本函数用于将集合分组"""
     # 城市对应等级任务矩阵
     city_lv_matrix_df = state_df.iloc[:, :]
     # 任务计数，用于划分集合
