@@ -51,19 +51,18 @@ if __name__ == "__main__":
     a_servers_df = servers_df.copy()[servers_df["current_city"] <= city_num]
     saved_params = {}
     T = 7
-    reduce_V = [{} for _ in range(T)]
     # 输入一个缩减为三个省的state 和 一个action 对应结果为 对应的收益
     # 这个循环，进行一次指定周期内的迭代。
-    reduce_V_actual = [{} for _ in range(T)]
     random.seed(42)
     iters = 10000
     # 修改保存的key value_S1 的key 值为状态，而不是当前状态+决策状态/应该改为当前状态+新到达任务
     # 需要修改的地方是？保存的地方 save 和get
     # 同时需要一个保存每个新产生的城市的矩阵
+    reduce_V = [{} for _ in range(T)]
+    reduce_V_actual = [{} for _ in range(T)]
     reduce_V_iter = [[{} for _ in range(T)] for a_iter in range(iters)]
     reduce_V_actual_iter = [[{} for _ in range(T)] for a_iter in range(iters)]
 
-    
     arriving_df_iter = [[0 for _ in range(T)] for a_iter in range(iters)]
     for it in range(iters):
         reduce_V, reduce_V_iter = cul_a_cycle(

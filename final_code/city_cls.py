@@ -319,8 +319,20 @@ def allocate_servers_2_cities(
     remain_servers_df,
     a_city_distance_df,
 ) -> dict:
-    # 本函数用于根据decisions集合分组情况/城市状态df/用户状态df，分配所有情况
+    """
+    本函数用于根据decisions集合分组情况/城市状态df/用户状态df,分配所有情况
 
+    输入:
+    - a_decision: list[tuple],一个决策列表,每个元素为一个元组(任务等级,业务员等级,数量)
+    - initial_task_df: DataFrame,初始任务数据框
+    - remain_servers_df: DataFrame,剩余业务员数据框
+    - a_city_distance_df: DataFrame,城市距离数据框
+
+    输出:
+    - revenue_and_combination_for_decision: dict,包含收益和组合的字典
+      - 'revenue': float,总收益
+      - 'combination': list[tuple],所有分配的组合,每个元素为一个元组(业务员id,业务员城市,分配去的城市编号,城市等级,业务员等级)
+    """
     revenue_and_combination_for_decision = {}
 
     # 对于组内的decision 返回的应该是多种分配
@@ -373,7 +385,22 @@ def allocate_servers_2_cities(
 
 
 def get_all_allocations_for_decisions(allocations_for_decisions: dict) -> list[dict]:
-    # 有了每个组合内的分配，开始合并不同组之间的决策，并reduce 并获取V历史记录的对应的收益。todo 可能需要修改计算revenue的
+    """
+    有了每个组合内的分配,开始合并不同组之间的决策,并reduce并获取V历史记录的对应的收益。
+
+    输入:
+    - allocations_for_decisions: dict,每个组合内的分配情况
+      - 键: int,分组的索引
+      - 值: dict,包含收益和组合的字典
+        - 'revenue': float,总收益
+        - 'combination': list[tuple],所有分配的组合,每个元素为一个元组(业务员id,业务员城市,分配去的城市编号,城市等级,业务员等级)
+
+    输出:
+    - final_revenue_n_combination_list: list[dict],最终的收益和组合列表
+      - 每个元素为一个字典,包含:
+        - 'final_revenue': float,最终的总收益
+        - 'final_combination': list[tuple],最终的分配组合,每个元素为一个元组(业务员id,业务员城市,分配去的城市编号,城市等级,业务员等级)
+    """
     num_combinations = 1
     for key, value in allocations_for_decisions.items():
         num_combinations *= len(value)
@@ -479,7 +506,29 @@ def get_allocation_for_a_day(
     reduce_V_actual,
     a_iter,
 ) -> (float, list[tuple]):
-    # 本函数用于获取最好的分配
+    """
+    本函数用于获取最好的分配
+
+    输入:
+    - final_revenue_n_combination_list: list[dict],最终的收益和组合列表
+      - 每个元素为一个字典,包含:
+        - 'final_revenue': float,最终的总收益
+        - 'final_combination': list[tuple],最终的分配组合,每个元素为一个元组(业务员id,业务员城市,分配去的城市编号,城市等级,业务员等级)
+    - remain_servers_df: DataFrame,剩余业务员数据框
+    - a_task_df: DataFrame,任务数据框
+    - arriving_rate_df: DataFrame,到达率数据框
+    - weekday: int,星期几(0-6)
+    - proveng_dict: dict,省份字典
+    - city_num_2_name: dict,城市编号到名称的映射
+    - reduce_V: dict,缩减后的状态值函数
+    - reduce_V_iter: int,缩减的迭代次数
+    - reduce_V_actual: dict,实际的缩减状态值函数
+    - a_iter: int,当前的迭代次数
+
+    输出:
+    - max_revenue: float,最大的总收益
+    - allocation_for_a_day: list[tuple],一天的最优分配,每个元素为一个元组(业务员id,业务员城市,分配去的城市编号,城市等级,业务员等级)
+    """
     allocation_for_a_day = []
     # 做决策了这里就是要，挑一个最大的，同时要吧state的值压缩了之后做保存，当前state情况的最优决策
     max_revenue = 0
@@ -546,8 +595,27 @@ def allocate_servers_2_citys_MDP(
     reduce_V_actual,
     a_iter,
 ):
-    '''将业务员根据算法分配到城市里'''
+    '''
+    将业务员根据算法分配到城市里
 
+    输入:
+    - remain_servers_df: DataFrame,剩余的业务员数据
+    - a_task_df: DataFrame,任务数据
+    - a_city_distance_df: DataFrame,城市距离数据
+    - arriving_rate_df: DataFrame,到达率数据
+    - weekday: int,星期几(0-6)
+    - proveng_dict: dict,省份字典
+    - city_num_2_name: dict,城市编号到名称的映射
+    - reduce_V: dict,缩减后的状态值函数
+    - reduce_V_iter: int,缩减的迭代次数
+    - reduce_V_actual: dict,实际的缩减状态值函数
+    - a_iter: int,当前的迭代次数
+
+    输出:
+    - final_revenue: float,最终的收益
+    - final_allocation_for_a_day: list,一天的最终分配方案,每个元素为一个元组(业务员id,业务员城市,分配去的城市编号,城市等级,业务员等级)
+   
+    '''
     # 根据 lv 来做分组
     join_idx_2_task_lv_server_lv_num = generate_idx_2_joins(
         a_task_df, remain_servers_df
@@ -780,7 +848,27 @@ def save_a_state_revenue(
     city_num_2_name,
     a_iter,
 ):
-    # 对状态将城市缩减为省份之后做个保存
+    """
+    对状态将城市缩减为省份之后做个保存
+
+    输入:
+    - a_servers_df: DataFrame,原始业务员数据框
+    - new_servers_df: DataFrame,更新后的业务员数据框(业务员分配后的位置)
+    - new_task_df: DataFrame,更新后的任务数据框(分配后新增任务)
+    - a_task_df: DataFrame,原始任务数据框
+    - allocate_task_df: DataFrame,分配的任务数据框
+    - final_revenue: float,最终的总收益
+    - reduce_V: dict,缩减后的状态值函数
+    - reduce_V_iter: dict,缩减后的状态值函数(按迭代次数)
+    - weekday: int,星期几(1-7)
+    - proveng_dict: dict,城市编号到省份的映射
+    - city_num_2_name: dict,城市编号到名称的映射
+    - a_iter: int,当前的迭代次数
+
+    输出:
+    - reduce_V: dict,更新后的缩减状态值函数
+    - reduce_V_iter: dict,更新后的缩减状态值函数(按迭代次数)
+    """
     reduced_server = reduce_server_df(
         a_servers_df=a_servers_df,
         proveng_dict=proveng_dict,
@@ -883,6 +971,17 @@ def allocate_reduce_df(
     final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df
 ):
     # 本函数用于对于确定的分配,获取状态用于后续的计算
+    ''' 输入:
+    - final_allocation_for_a_day: list[tuple],一天的最优分配,每个元素为一个元组(业务员id,业务员城市,分配去的城市编号,城市等级,业务员等级)
+    - a_task_df: DataFrame,任务数据框
+    - arriving_rate_df: DataFrame,到达率数据框
+    - a_servers_df: DataFrame,业务员数据框
+
+    输出:
+    - new_task_df: DataFrame,更新后的任务数据框(分配后新增任务)
+    - new_servers_df: DataFrame,更新后的业务员数据框(业务员分配后的位置)
+    - allocate_task_df: DataFrame,分配的任务数据框
+    '''
     # 传入分配情况/状态举证/到达矩阵
     # 返回新增任务后的状态矩阵/ 分配的矩阵
     # todo 这里应该对任务新增做个保存，为了后续的其他算法的计算
@@ -921,7 +1020,29 @@ def save_reduct_v(
     reduce_V_iter,
     a_iter,
 ):
-    # 本函数用于保存收益矩阵
+    """
+    本函数用于保存收益矩阵
+
+    输入:
+    - a_task_df: DataFrame,任务数据框
+    - a_servers_df: DataFrame,业务员数据框
+    - final_allocation_for_a_day: list[tuple],一天的最优分配,每个元素为一个元组(业务员id,业务员城市,分配去的城市编号,城市等级,业务员等级)
+    - arriving_rate_df: DataFrame,到达率数据框
+    - weekday: int,星期几(0-6)
+    - proveng_dict: dict,省份字典
+    - city_num_2_name: dict,城市编号到名称的映射
+    - final_revenue: float,最终的总收益
+    - reduce_V: dict,缩减后的状态值函数
+    - reduce_V_iter: int,缩减的迭代次数
+    - a_iter: int,当前的迭代次数
+
+    输出:
+    - reduce_V: dict,更新后的缩减状态值函数
+    - reduce_V_iter: int,更新后的缩减迭代次数
+    - new_task_df: DataFrame,更新后的任务数据框
+    - new_servers_df: DataFrame,更新后的业务员数据框
+    - allocate_task_df: DataFrame,分配的任务数据框
+    """
     new_task_df, new_servers_df, allocate_task_df = allocate_reduce_df(
         final_allocation_for_a_day, a_task_df, arriving_rate_df, a_servers_df
     )
@@ -957,7 +1078,26 @@ def cul_a_cycle(
     reduce_V_actual,
     a_iter,
 ):
-    '''本函数用于对一个周期内求解状态和周期的收益'''
+    '''
+    本函数用于对一个周期内求解状态和周期的收益
+
+    输入:
+    - T: int, 周期的天数
+    - a_servers_df: DataFrame, 业务员状态 (40*3)
+    - a_task_df: DataFrame, 任务状态 (26*5)
+    - arriving_rate_df: DataFrame, 任务到达率,来自excel (26*5) 
+    - a_city_distance_df: DataFrame, 城市距离的数据 (26*26) (city_num*city_num)
+    - proveng_dict: dict, 省份字典
+    - city_num_2_name: dict, 城市编号到名称的映射
+    - reduce_V: dict, 缩减后的状态值函数
+    - reduce_V_iter: list[list], 缩减的迭代次数
+    - reduce_V_actual: list[], 实际的缩减状态值函数
+    - a_iter: int, 当前的迭代次数
+
+    输出:
+    - reduce_V: dict, 更新后的缩减状态值函数
+    - reduce_V_iter: int, 更新后的缩减迭代次数
+    '''
     # 每次迭代，应该决策前的状态，最优决策，缩减的决策和状态，以及收益， 之后应当可以通过缩减的决策和状态获取收益，这个得做一个保存
     # 我们先假设组内直接求最优，组间组合的时候做一个缩减后的状态收益决策。
     for time in range(1, T + 1):
@@ -1367,7 +1507,18 @@ def remove_duplicates(list_of_lists_of_tuples):
 
 
 def generate_idx_2_joins(state_df, remain_servers_df):
-    """本函数用于将集合分组"""
+    """
+    本函数用于将集合分组
+
+    输入:
+    - state_df: DataFrame,状态数据框,包含城市对应等级任务矩阵
+    - remain_servers_df: DataFrame,剩余的业务员数据
+
+    输出:
+    - join_idx_2_task_lv_server_lv_num: dict,分组结果的字典
+      - 键: int,分组的索引
+      - 值: list,每个元素为一个元组(任务等级,业务员等级,数量)
+    """
     # 城市对应等级任务矩阵
     city_lv_matrix_df = state_df.iloc[:, :]
     # 任务计数，用于划分集合
@@ -1400,7 +1551,7 @@ def generate_idx_2_joins(state_df, remain_servers_df):
         ]  # 获取与join中每个level相对应的任务数量
         a_servers = [
             servers[index] for index in level_indices
-        ]  # 获取与join中每个level相对应的服务器数量
+        ]  # 获取与join中每个level相对应的业务员数量
         a_lvs = [levels[index] for index in level_indices]
         decisions = allocate(tasks=a_tasks, servers=a_servers, levels=a_lvs)
         decisions_list_tuple = decisions_2_decisions_list_tuple(
@@ -1431,7 +1582,7 @@ def change_df_city_name_2_idx(cities: pd.DataFrame) -> (pd.DataFrame, dict):
 
 # 2024年1月21日 20点42分
 def get_proveng_city_dist_mat_df(
-    path=r"D:\Users\sjc\algorithm\paper\data\中国各城市空间权重矩阵(1).xlsx",
+    path=r"C:\Users\dylan\Desktop\code\paper\data\中国各城市空间权重矩阵(1).xlsx",
 ):
     proveng_city_dist_mat_df = pd.read_excel(
         path,
@@ -1561,7 +1712,7 @@ def generate_city(city_num: int = 26) -> (pd.DataFrame, dict):
         index=pd.MultiIndex.from_tuples(city_columns, names=column_names),
         columns=pd.MultiIndex.from_tuples(city_columns, names=column_names),
     )
-    city_df.to_excel(rf"D:\Users\sjc\algorithm\paper\city_{city_num}.xlsx")
+    city_df.to_excel(rf"C:\Users\dylan\Desktop\code\paper\city_{city_num}.xlsx")
     print(rf"D:\Users\sjc\algorithm\paper\city_{city_num}.xlsx")
     return city_df
 
