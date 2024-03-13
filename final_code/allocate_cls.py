@@ -5,6 +5,21 @@ from collections import Counter
 
 
 def is_comb_valid(comb, levels, servers):
+    """
+    判断给定的分配组合是否有效
+
+    输入:
+    - comb: tuple,分配组合,表示每个任务分配到的等级
+    - levels: list,等级列表
+    - servers: list,每个等级的业务员数量列表
+
+    输出:
+    - is_valid: bool,表示分配组合是否有效
+
+    注意:
+    - 分配组合需要满足以下条件:
+      每个等级分配的任务数量不能超过该等级的业务员数量
+    """
     count = Counter(comb)
     for level in count.keys():
         if  count[level] > servers[levels.index(level)]:
@@ -49,6 +64,22 @@ all_server_task_level_2_comb = []
 
 
 def allocate(servers: list, tasks: list, levels: list) -> list[tuple]:
+    """
+    根据业务员数量、任务数量和等级列表,生成有效的分配组合
+
+    输入:
+    - servers: list,每个等级的业务员数量列表
+    - tasks: list,每个等级的任务数量列表
+    - levels: list,等级列表
+
+    输出:
+    - selected_combinations: list[tuple],有效的分配组合列表,每个组合为一个元组
+
+    注意:
+    - 分配组合需要满足以下条件:
+      1. 每个任务的分配等级不能高于其本身的等级 （这个在生成的时候已经保证了这个条件）
+      2. 每个等级分配的任务数量不能超过该等级的业务员数量
+    """
     # _print(f"{servers=}\n{tasks=}\n{levels=}")
     # for i in range(task_sum):
     # levels

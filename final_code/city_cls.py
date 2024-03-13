@@ -108,6 +108,21 @@ def get_revenue_by_task_and_num(task_lv, num):
 
 
 def get_selected_task_lv_city_id_list(task_lv, a_task_df):
+    """
+    获取指定等级为task_lv的任务所在城市id列表,并根据任务数量重复城市id
+
+    输入:
+    - task_lv: int,指定的任务等级
+    - a_task_df: DataFrame,任务数据框,包含每个城市不同等级的任务数量
+
+    输出:
+    - selected_task_city_id_list_repeated: list,指定等级的任务所在城市id列表,根据任务数量重复城市id
+
+    注意:
+    - 函数通过筛选a_task_df中对应等级(level task_lv)的任务数量大于等于1的城市
+    - 从筛选后的数据框的索引中提取城市id,并转换为整数列表
+    - 根据筛选后的任务数量,重复对应的城市id,生成最终的城市id列表
+    """
     # 本函数用于获取指定level为task_lv的task的城市id
     # remain_servers_df
     # 对于一个decisions 内的单个allocation，进行分配
@@ -131,6 +146,22 @@ def get_selected_task_lv_city_id_list(task_lv, a_task_df):
 
 
 def get_selected_selected_server_city_n_id_list(server_lv, remain_servers_df):
+    """
+    获取指定等级为server_lv的业务员的城市id列表和业务员id列表
+
+    输入:
+    - server_lv: int,指定的业务员等级
+    - remain_servers_df: DataFrame,剩余业务员数据框,包含业务员等级(lv)和当前所在城市(current_city)
+
+    输出:
+    - selected_server_id_list: list,指定等级的业务员id列表
+    - selected_server_city_id_list: list,指定等级的业务员所在城市id列表
+
+    注意:
+    - 函数通过筛选remain_servers_df中lv等于server_lv的行来获取指定等级的业务员信息
+    - 从筛选后的数据框中提取current_city列获得业务员所在城市id列表
+    - 使用筛选后的数据框的索引并进行字符串处理获得业务员id列表
+    """
     # 本函数用于获取指定level为server_lv的server的城市id_list
     # server_lv = 1
     selected_server_city_df = remain_servers_df[remain_servers_df["lv"] == server_lv][
@@ -145,7 +176,26 @@ def get_selected_selected_server_city_n_id_list(server_lv, remain_servers_df):
     return selected_server_id_list, selected_server_city_id_list
 
 def combine_cities(cities, path=[], all_paths=[]):
-    # 获取
+    """
+    根据给定的分配元组,将业务员分配到最近的3个城市,并返回最大收益和分配方案
+
+    输入:
+    - allocate_tuple: tuple,分配元组,包含任务等级、业务员等级和分配数量(task_lv, server_lv, allocate_num)
+    - a_task_df: DataFrame,任务数据框,包含每个城市不同等级的任务数量
+    - remain_servers_df: DataFrame,剩余业务员数据框,包含每个城市不同等级的业务员数量
+    - a_city_distance_df: DataFrame,城市距离数据框,包含城市之间的距离信息
+
+    输出:
+    - final_revenue: float,最大收益,即完成任务获得的奖励减去业务员出差的费用
+    - new_server_and_task_combination_list: list,最优分配方案列表,每个元素为一个列表,包含业务员编号、业务员城市、分配去的城市编号、城市等级和业务员等级
+
+    注意:
+    - 函数根据分配元组中的任务等级和业务员等级,从任务数据框和剩余业务员数据框中获取满足条件的城市列表
+    - 使用CityDistanceManager获取每个业务员城市最近的3个任务城市
+    - 使用combine_cities函数生成所有可能的分配方案
+    - 最终返回收益和分配方案列表
+    - 该函数通过选择最近的3个城市来降低计算复杂度
+    """
     if not cities:
         all_paths.append(path)
         return all_paths
@@ -234,6 +284,25 @@ def allocate_servers_2_cities_for_a_decision_nearest_n_city(
 def allocate_servers_2_cities_for_a_decision(
     allocate_tuple, a_task_df, remain_servers_df, a_city_distance_df
 ):
+    """
+    根据给定的分配元组,将业务员分配到对应的城市,并返回最大收益和分配方案
+
+    输入:
+    - allocate_tuple: tuple,分配元组,包含任务等级、业务员等级和分配数量(task_lv, server_lv, allocate_num)
+    - a_task_df: DataFrame,任务数据框,包含每个城市不同等级的任务数量
+    - remain_servers_df: DataFrame,剩余业务员数据框,包含每个城市不同等级的业务员数量
+    - a_city_distance_df: DataFrame,城市距离数据框,包含城市之间的距离信息
+
+    输出:
+    - final_revenue: float,最大收益,即完成任务获得的奖励减去业务员出差的费用
+    - new_server_and_task_combination_list: list,最优分配方案列表,每个元素为一个列表,包含业务员编号、业务员城市、分配去的城市编号、城市等级和业务员等级
+
+    注意:
+    - 函数根据分配元组中的任务等级和业务员等级,从任务数据框和剩余业务员数据框中获取满足条件的城市列表
+    - 使用get_combinations函数生成所有可能的分配方案,并计算每个方案的最小成本
+    - 最终返回收益最大的分配方案和对应的收益值
+    - 该函数已废弃,仅供参考
+    """
     # 本函数用于将一个组合的分配方式，递归方式获取所有分配，
     # 并组合成 [业务员id，业务员城市id，分配去的城市id，分配去的城市的任务的等级，业务员任务等级]
     # 已废弃
@@ -428,11 +497,41 @@ def get_all_allocations_for_decisions(allocations_for_decisions: dict) -> list[d
 
 
 def generate_tasks(arriving_rate):
+    """
+    根据给定的到达率生成随机的任务数量
+
+    输入:
+    - arriving_rate: float,任务的到达率,表示平均每个时间单位到达的任务数量
+
+    输出:
+    - tasks: int,生成的随机任务数量
+
+    注意:
+    - 函数使用泊松分布(Poisson distribution)生成随机的任务数量
+    - 泊松分布适用于描述单位时间内随机事件发生的次数,这里用于模拟任务的到达过程
+    """
+    # 使用numpy的random.poisson函数生成一个随机的任务数量
+    # 泊松分布的参数为arriving_rate,表示平均每个时间单位到达的任务数量
     tasks = np.random.poisson(arriving_rate)
     return tasks
 
 
 def update_state(state_df, tasks):
+    """
+    更新状态数据框,将新的任务数量添加到原有的状态中
+
+    输入:
+    - state_df: DataFrame,原有的状态数据框,行索引为城市,列索引为任务等级
+    - tasks: list,新的任务列表,每个元素为一个元组(city, level, num)
+
+    输出:
+    - updated_task_df: DataFrame,更新后的状态数据框
+
+    注意:
+    - 函数会创建一个新的数据框updated_task_df,复制原有状态数据框的内容
+    - 根据新的任务列表tasks创建一个临时的数据框tasks_df,与原有状态数据框具有相同的行列索引
+    - 遍历原有状态数据框的每个城市和任务等级,将对应的新任务数量累加到updated_task_df中
+    """
     updated_task_df = state_df.copy()
 
     tasks_df = pd.DataFrame(tasks, index=state_df.index, columns=state_df.columns)
@@ -444,6 +543,21 @@ def update_state(state_df, tasks):
 
 def reduce_task_df(a_task_df, proveng_dict, city_num_2_name):
     # 默认是有两列index，一列省份一列市的，缩减为省份的
+    """
+    将任务数据框缩减为省份级别
+
+    输入:
+    - a_task_df: DataFrame,原始的任务数据框
+    - proveng_dict: dict,城市名称到省份的映射字典
+    - city_num_2_name: dict,城市编号到城市名称的映射字典
+
+    输出:
+    - final_reduced_task_df: DataFrame,缩减后的任务数据框,按省份聚合
+
+    注意:
+    - 函数会创建一个新的数据框reduced_task_df,并根据城市编号和城市名称映射获取对应的省份作为新的索引
+    - 最终返回一个按省份聚合后的数据框final_reduced_task_df
+    """
     new_index = [
         proveng_dict[city_num_2_name[int(city[5:])][0]] for city in a_task_df.index
     ]
@@ -461,6 +575,22 @@ def reduce_task_df(a_task_df, proveng_dict, city_num_2_name):
 
 def reduce_server_df(a_servers_df, proveng_dict, city_num_2_name):
     # 默认是有两列index，一列省份一列市的，缩减为省份的
+    
+    """
+    将业务员数据框缩减为省份级别
+
+    输入:
+    - a_servers_df: DataFrame,原始的业务员数据框
+    - proveng_dict: dict,城市名称到省份的映射字典
+    - city_num_2_name: dict,城市编号到城市名称的映射字典
+
+    输出:
+    - city_prov_tuples: list,缩减后的业务员省份列表,每个元素为一个元组(server_id, province)
+
+    注意:
+    - 函数会创建一个新的数据框reduced_servers_df,并根据城市编号和城市名称映射获取对应的省份
+    - 最终返回一个列表,其中每个元素为一个元组(server_id, province)
+    """
     reduced_servers_df = a_servers_df.copy()
     reduced_servers_df["current_prov"] = (
         reduced_servers_df["current_city"]
@@ -478,6 +608,20 @@ def reduce_server_df(a_servers_df, proveng_dict, city_num_2_name):
 # 根据最优解的combination 求得业务员之后的位置
 # columns = ['业务员编号id', '业务员城市', '分配去的城市编号', '城市等级', '业务员等级']
 def update_server_cities(servers_df, allocation_for_a_day):
+    """
+    根据当天的业务员分配情况更新业务员所在城市
+
+    输入:
+    - servers_df: DataFrame,原始的业务员数据框
+    - allocation_for_a_day: list,当天的业务员分配情况,每个元素为一个元组(server_id, server_org_city, server_to_city, city_lv, server_lv)
+
+    输出:
+    - new_servers_df: DataFrame,更新后的业务员数据框
+
+    注意:
+    - 函数会创建一个新的数据框new_servers_df,并更新其中的"current_city"列
+    - 对于每个分配,函数会根据server_id找到对应的业务员,并将其"current_city"更新为分配的目标城市server_to_city
+    """
     new_servers_df = servers_df.copy()
     new_servers_df.columns = ["current_city", "lv", "day off"]
     for allocation in allocation_for_a_day:
@@ -530,7 +674,7 @@ def get_allocation_for_a_day(
     - allocation_for_a_day: list[tuple],一天的最优分配,每个元素为一个元组(业务员id,业务员城市,分配去的城市编号,城市等级,业务员等级)
     """
     allocation_for_a_day = []
-    # 做决策了这里就是要，挑一个最大的，同时要吧state的值压缩了之后做保存，当前state情况的最优决策
+    # 做决策了这里就是要，挑一个最大的，同时要把state的值压缩了之后做保存，当前state情况的最优决策
     max_revenue = 0
     max_combination = []
     for revenue_n_combination in final_revenue_n_combination_list:
@@ -571,6 +715,31 @@ def get_allocation_for_a_day(
 def allcocate_comb_2_allocate_task_df(
     final_allocation_for_a_day: list[tuple], org_task_df: pd.DataFrame
 ) -> pd.DataFrame:
+    """
+    获取指定状态的收益值
+
+    输入:
+    - a_servers_df: DataFrame,原始业务员数据框
+    - new_servers_df: DataFrame,更新后的业务员数据框(业务员分配后的位置)
+    - new_task_df: DataFrame,更新后的任务数据框(分配后新增任务)
+    - a_task_df: DataFrame,原始任务数据框
+    - allocate_task_df: DataFrame,分配的任务数据框
+    - reduce_V: dict,缩减后的状态值函数
+    - reduce_V_iter: dict,缩减后的状态值函数(按迭代次数)
+    - reduce_V_actual: dict,实际的缩减状态值函数
+    - weekday: int,星期几(1-7)
+    - proveng_dict: dict,城市编号到省份的映射
+    - city_num_2_name: dict,城市编号到名称的映射
+    - a_iter: int,当前的迭代次数
+
+    输出:
+    - revenue: float,指定状态的收益值
+
+    注意:
+    - 状态由缩减后的业务员状态和新任务状态组成
+    - 如果状态在实际的缩减状态值函数中存在,则返回对应的收益值,否则返回0
+    """
+    
     new_task_df = org_task_df.copy()
     new_task_df.fillna(0, inplace=True)
     # columns = ['业务员编号id', '业务员城市', '分配去的城市编号', '城市等级', '业务员等级']
@@ -1447,6 +1616,23 @@ def generate_joins(
 def form_all_decision_list_by_tuple(
     decision_task_done_by_server_level: tuple, tasks, servers, levels
 ) -> list[tuple]:
+    """
+    根据任务完成情况的元组,生成决策列表
+
+    输入:
+    - decision_task_done_by_server_level: tuple,任务完成情况的元组,表示每个任务由哪个等级的业务员完成
+    - tasks: list,每个等级的任务数量列表
+    - servers: list,每个等级的业务员数量列表
+    - levels: list,等级列表
+
+    输出:
+    - decision_list_tuple: list[tuple],决策列表,每个决策为一个元组(任务等级,业务员等级,数量)
+
+    注意:
+    - 决策列表按照任务等级的顺序生成
+    - 对于每个任务等级,统计由不同业务员等级完成的任务数量,生成相应的决策元组
+    """
+    
     # （任务等级，业务员等级，数量）
     last_task_idx = 0
     decision_list_tuple = []
@@ -1469,6 +1655,22 @@ def form_all_decision_list_by_tuple(
 def decisions_2_decisions_list_tuple(
     decisions, tasks, servers, levels
 ) -> list[list[tuple]]:
+    """
+    将决策列表转换为元组形式的决策列表
+
+    输入:
+    - decisions: list[list],决策列表,每个决策为一个列表
+    - tasks: list,每个等级的任务数量列表
+    - servers: list,每个等级的业务员数量列表
+    - levels: list,等级列表
+
+    输出:
+    - decisions_list_tuple: list[list[tuple]],元组形式的决策列表,每个决策为一个元组列表
+
+    注意:
+    - 决策列表中的每个决策都需要转换为元组形式
+    - 转换后的决策列表保持与原决策列表相同的顺序
+    """
     decisions_list_tuple = []
 
     for decision in decisions:
